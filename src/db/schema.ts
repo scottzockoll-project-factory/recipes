@@ -5,11 +5,10 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-// Example table - replace with your own schema
-export const posts = pgTable("posts", {
+export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  content: text("content"),
+  source: text("source").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

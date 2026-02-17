@@ -1,27 +1,29 @@
 {
   "name": "recipes",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/scottzockoll/recipes.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/scottzockoll/recipes/issues"
-  },
-  "homepage": "https://github.com/scottzockoll/recipes#readme",
   "dependencies": {
+    "@cooklang/cooklang-ts": "^1.1.1",
     "@neondatabase/serverless": "^1.0.2",
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.1",
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.9"
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "drizzle-kit": "^0.31.9",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
+    "@tailwindcss/postcss": "^4.1.8",
+    "typescript": "^5.8.3"
   }
 }
