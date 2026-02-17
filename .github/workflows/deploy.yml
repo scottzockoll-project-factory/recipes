@@ -45,7 +45,7 @@ jobs:
       - name: Deploy postgres - npx drizzle-kit push
         run: npx drizzle-kit push
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
 
       - name: Deploy frontend - vercel --prod --yes --token $VERCEL_TOKE
         run: vercel --prod --yes --token $VERCEL_TOKEN
