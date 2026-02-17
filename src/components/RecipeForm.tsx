@@ -5,10 +5,33 @@ export default function RecipeForm({
   defaultValues,
 }: {
   action: (formData: FormData) => void;
-  defaultValues?: { title: string; source: string };
+  defaultValues?: { slug?: string; title: string; source: string };
 }) {
+  const isEdit = !!defaultValues?.slug;
+
   return (
     <form action={action} className="space-y-4">
+      <div>
+        <label htmlFor="slug" className="block text-sm font-medium mb-1">
+          URL Slug
+        </label>
+        {isEdit ? (
+          <p className="text-sm text-stone-600 font-mono bg-stone-100 rounded px-3 py-2">
+            {defaultValues.slug}
+          </p>
+        ) : (
+          <input
+            id="slug"
+            name="slug"
+            type="text"
+            required
+            pattern="[a-z0-9\-]+"
+            title="Lowercase letters, numbers, and hyphens only"
+            placeholder="my-recipe-name"
+            className="w-full border border-stone-300 rounded px-3 py-2 bg-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+          />
+        )}
+      </div>
       <div>
         <label htmlFor="title" className="block text-sm font-medium mb-1">
           Title

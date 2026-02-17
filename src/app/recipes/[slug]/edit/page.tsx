@@ -8,11 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function EditRecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const recipeId = parseInt(id);
-  const recipe = await getRecipe(recipeId);
+  const { slug } = await params;
+  const recipe = await getRecipe(slug);
 
   if (!recipe) notFound();
 
@@ -21,8 +20,8 @@ export default async function EditRecipePage({
     const title = formData.get("title") as string;
     const source = formData.get("source") as string;
 
-    await updateRecipe(recipeId, title, source);
-    redirect(`/recipes/${recipeId}`);
+    await updateRecipe(slug, title, source);
+    redirect(`/recipes/${slug}`);
   }
 
   return (
@@ -30,7 +29,7 @@ export default async function EditRecipePage({
       <h1 className="text-xl font-semibold mb-6">Edit Recipe</h1>
       <RecipeForm
         action={handleUpdate}
-        defaultValues={{ title: recipe.title, source: recipe.source }}
+        defaultValues={{ slug: recipe.slug, title: recipe.title, source: recipe.source }}
       />
     </div>
   );

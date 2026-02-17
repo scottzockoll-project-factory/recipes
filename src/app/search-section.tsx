@@ -7,11 +7,11 @@ import { searchByIngredients } from "@/app/search/actions";
 import type { IngredientSearchResult } from "@/data/recipes";
 
 interface SearchSectionProps {
-  recipes: { id: number; title: string }[];
+  recipes: { slug: string; title: string }[];
 }
 
 interface ResultItem {
-  id: number;
+  slug: string;
   title: string;
   href: string;
 }
@@ -23,11 +23,11 @@ function useArrowNav(items: ResultItem[]) {
   itemsRef.current = items;
 
   // Reset to first item when results change
-  const itemIds = items.map((i) => i.id).join(",");
+  const itemSlugs = items.map((i) => i.slug).join(",");
   useEffect(() => {
     setActiveIndex(items.length > 0 ? 0 : -1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemIds]);
+  }, [itemSlugs]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -76,15 +76,15 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
     : [];
 
   const titleItems: ResultItem[] = titleResults.map((r) => ({
-    id: r.id,
+    slug: r.slug,
     title: r.title,
-    href: `/recipes/${r.id}`,
+    href: `/recipes/${r.slug}`,
   }));
 
   const ingredientItems: ResultItem[] = ingredientResults.map((r) => ({
-    id: r.id,
+    slug: r.slug,
     title: r.title,
-    href: `/recipes/${r.id}`,
+    href: `/recipes/${r.slug}`,
   }));
 
   const titleNav = useArrowNav(titleItems);
@@ -171,9 +171,9 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
               <p className="text-sm text-stone-500">No recipes match that title.</p>
             ) : (
               titleResults.map((r, i) => (
-                <li key={r.id}>
+                <li key={r.slug}>
                   <a
-                    href={`/recipes/${r.id}`}
+                    href={`/recipes/${r.slug}`}
                     className={`block border border-stone-200 rounded px-4 py-3 text-sm transition-colors ${
                       i === titleNav.activeIndex
                         ? "bg-stone-200"
@@ -230,9 +230,9 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             ) : (
               <ul className="space-y-2">
                 {ingredientResults.map((recipe, i) => (
-                  <li key={recipe.id}>
+                  <li key={recipe.slug}>
                     <a
-                      href={`/recipes/${recipe.id}`}
+                      href={`/recipes/${recipe.slug}`}
                       className={`block border border-stone-200 rounded-lg p-4 transition-colors ${
                         i === ingredientNav.activeIndex
                           ? "bg-stone-200"

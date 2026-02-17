@@ -7,6 +7,7 @@ import {
 
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   source: text("source").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

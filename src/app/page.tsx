@@ -18,9 +18,9 @@ export default async function Home() {
         ) : (
           <ul className="space-y-2">
             {allRecipes.map((recipe) => (
-              <li key={recipe.id}>
+              <li key={recipe.slug}>
                 <Link
-                  href={`/recipes/${recipe.id}`}
+                  href={`/recipes/${recipe.slug}`}
                   className="block border border-stone-200 rounded px-4 py-3 hover:bg-stone-100"
                 >
                   {recipe.title}

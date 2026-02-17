@@ -1,15 +1,25 @@
 import { redirect } from "next/navigation";
-import { createRecipe } from "@/data/recipes";
+import { createRecipe, isSlugAvailable } from "@/data/recipes";
 import RecipeForm from "@/components/RecipeForm";
 
 export default function NewRecipePage() {
   async function handleCreate(formData: FormData) {
     "use server";
+    const slug = formData.get("slug") as string;
     const title = formData.get("title") as string;
     const source = formData.get("source") as string;
 
-    const { id } = await createRecipe(title, source);
-    redirect(`/recipes/${id}`);
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      throw new Error("Slug must contain only lowercase letters, numbers, and hyphens");
+    }
+
+    const available = await isSlugAvailable(slug);
+    if (!available) {
+      throw new Error(`A recipe with slug "${slug}" already exists`);
+    }
+
+    await createRecipe(slug, title, source);
+    redirect(`/recipes/${slug}`);
   }
 
   return (

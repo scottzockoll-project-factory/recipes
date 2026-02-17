@@ -8,6 +8,7 @@ type Recipe = InferSelectModel<typeof recipesTable>;
 const seedRecipes: Recipe[] = [
   {
     id: 1,
+    slug: "classic-tomato-pasta",
     title: "Classic Tomato Pasta",
     source: `Bring a large pot of @water to a boil and cook @pasta{500%g} until al dente.
 
@@ -21,6 +22,7 @@ Toss the cooked pasta with the sauce and top with @parmesan cheese{50%g}, grated
   },
   {
     id: 2,
+    slug: "scrambled-eggs-on-toast",
     title: "Scrambled Eggs on Toast",
     source: `Crack @eggs{3} into a bowl and whisk with @salt{1%pinch} and @pepper{1%pinch}.
 
@@ -32,6 +34,7 @@ Toast @bread{2%slices} and serve the eggs on top. Garnish with @chives{1%tbsp}, 
   },
   {
     id: 3,
+    slug: "simple-green-salad",
     title: "Simple Green Salad",
     source: `Wash and tear @mixed greens{200%g} into bite-sized pieces.
 
@@ -46,25 +49,28 @@ Toss the greens with the dressing. Top with @cherry tomatoes{100%g}, halved, and
 let mockRecipes: Recipe[] = [...seedRecipes];
 let nextId = 4;
 
-function mockGetAllRecipes(): { id: number; title: string }[] {
+function mockGetAllRecipes(): { slug: string; title: string }[] {
   return [...mockRecipes]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .map(({ id, title }) => ({ id, title }));
+    .map(({ slug, title }) => ({ slug, title }));
 }
 
-function mockGetRecipe(id: number): Recipe | undefined {
-  return mockRecipes.find((r) => r.id === id);
+function mockGetRecipe(slug: string): Recipe | undefined {
+  return mockRecipes.find((r) => r.slug === slug);
 }
 
-function mockCreateRecipe(title: string, source: string): { id: number } {
+function mockCreateRecipe(slug: string, title: string, source: string): { slug: string } {
+  if (mockRecipes.some((r) => r.slug === slug)) {
+    throw new Error(`A recipe with slug "${slug}" already exists`);
+  }
   const now = new Date();
-  const recipe: Recipe = { id: nextId++, title, source, createdAt: now, updatedAt: now };
+  const recipe: Recipe = { id: nextId++, slug, title, source, createdAt: now, updatedAt: now };
   mockRecipes.push(recipe);
-  return { id: recipe.id };
+  return { slug: recipe.slug };
 }
 
-function mockUpdateRecipe(id: number, title: string, source: string): void {
-  const recipe = mockRecipes.find((r) => r.id === id);
+function mockUpdateRecipe(slug: string, title: string, source: string): void {
+  const recipe = mockRecipes.find((r) => r.slug === slug);
   if (recipe) {
     recipe.title = title;
     recipe.source = source;
@@ -72,64 +78,76 @@ function mockUpdateRecipe(id: number, title: string, source: string): void {
   }
 }
 
+function mockIsSlugAvailable(slug: string): boolean {
+  return !mockRecipes.some((r) => r.slug === slug);
+}
+
 // --- Real DB implementation ---
 
-async function dbGetAllRecipes(): Promise<{ id: number; title: string }[]> {
+async function dbGetAllRecipes(): Promise<{ slug: string; title: string }[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { desc } = await import("drizzle-orm");
   return db
-    .select({ id: recipes.id, title: recipes.title })
+    .select({ slug: recipes.slug, title: recipes.title })
     .from(recipes)
     .orderBy(desc(recipes.createdAt));
 }
 
-async function dbGetRecipe(id: number): Promise<Recipe | undefined> {
+async function dbGetRecipe(slug: string): Promise<Recipe | undefined> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { eq } = await import("drizzle-orm");
-  const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+  const [recipe] = await db.select().from(recipes).where(eq(recipes.slug, slug));
   return recipe;
 }
 
-async function dbCreateRecipe(title: string, source: string): Promise<{ id: number }> {
+async function dbCreateRecipe(slug: string, title: string, source: string): Promise<{ slug: string }> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const [inserted] = await db
     .insert(recipes)
-    .values({ title, source })
-    .returning({ id: recipes.id });
+    .values({ slug, title, source })
+    .returning({ slug: recipes.slug });
   return inserted;
 }
 
-async function dbUpdateRecipe(id: number, title: string, source: string): Promise<void> {
+async function dbUpdateRecipe(slug: string, title: string, source: string): Promise<void> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { eq } = await import("drizzle-orm");
   await db
     .update(recipes)
     .set({ title, source, updatedAt: new Date() })
-    .where(eq(recipes.id, id));
+    .where(eq(recipes.slug, slug));
+}
+
+async function dbIsSlugAvailable(slug: string): Promise<boolean> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  const [existing] = await db.select({ slug: recipes.slug }).from(recipes).where(eq(recipes.slug, slug));
+  return !existing;
 }
 
 // --- Search helpers ---
 
-type RecipeWithSource = { id: number; title: string; source: string };
+type RecipeWithSource = { slug: string; title: string; source: string };
 
 function mockGetAllRecipesWithSource(): RecipeWithSource[] {
-  return mockRecipes.map(({ id, title, source }) => ({ id, title, source }));
+  return mockRecipes.map(({ slug, title, source }) => ({ slug, title, source }));
 }
 
 async function dbGetAllRecipesWithSource(): Promise<RecipeWithSource[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   return db
-    .select({ id: recipes.id, title: recipes.title, source: recipes.source })
+    .select({ slug: recipes.slug, title: recipes.title, source: recipes.source })
     .from(recipes);
 }
 
 export interface IngredientSearchResult {
-  id: number;
+  slug: string;
   title: string;
   matchedIngredients: string[];
   totalIngredients: number;
@@ -166,7 +184,7 @@ export async function searchRecipesByIngredients(
 
     if (matched.size > 0) {
       results.push({
-        id: recipe.id,
+        slug: recipe.slug,
         title: recipe.title,
         matchedIngredients: [...matched],
         totalIngredients: recipeIngredients.length,
@@ -182,22 +200,27 @@ export async function searchRecipesByIngredients(
 
 const useDb = !!process.env.DATABASE_URL;
 
-export async function getAllRecipes(): Promise<{ id: number; title: string }[]> {
+export async function getAllRecipes(): Promise<{ slug: string; title: string }[]> {
   if (useDb) return dbGetAllRecipes();
   return mockGetAllRecipes();
 }
 
-export async function getRecipe(id: number): Promise<Recipe | undefined> {
-  if (useDb) return dbGetRecipe(id);
-  return mockGetRecipe(id);
+export async function getRecipe(slug: string): Promise<Recipe | undefined> {
+  if (useDb) return dbGetRecipe(slug);
+  return mockGetRecipe(slug);
 }
 
-export async function createRecipe(title: string, source: string): Promise<{ id: number }> {
-  if (useDb) return dbCreateRecipe(title, source);
-  return mockCreateRecipe(title, source);
+export async function createRecipe(slug: string, title: string, source: string): Promise<{ slug: string }> {
+  if (useDb) return dbCreateRecipe(slug, title, source);
+  return mockCreateRecipe(slug, title, source);
 }
 
-export async function updateRecipe(id: number, title: string, source: string): Promise<void> {
-  if (useDb) return dbUpdateRecipe(id, title, source);
-  return mockUpdateRecipe(id, title, source);
+export async function updateRecipe(slug: string, title: string, source: string): Promise<void> {
+  if (useDb) return dbUpdateRecipe(slug, title, source);
+  return mockUpdateRecipe(slug, title, source);
+}
+
+export async function isSlugAvailable(slug: string): Promise<boolean> {
+  if (useDb) return dbIsSlugAvailable(slug);
+  return mockIsSlugAvailable(slug);
 }

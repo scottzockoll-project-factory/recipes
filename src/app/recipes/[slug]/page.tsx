@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function RecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const recipe = await getRecipe(parseInt(id));
+  const { slug } = await params;
+  const recipe = await getRecipe(slug);
 
   if (!recipe) notFound();
 
@@ -20,7 +20,7 @@ export default async function RecipePage({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">{recipe.title}</h1>
         <Link
-          href={`/recipes/${recipe.id}/edit`}
+          href={`/recipes/${recipe.slug}/edit`}
           className="text-sm text-stone-500 hover:text-stone-800 border border-stone-300 rounded px-3 py-1"
         >
           Edit
