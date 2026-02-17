@@ -24,7 +24,7 @@ export default function RecipeForm({
       </div>
       <div>
         <label htmlFor="source" className="block text-sm font-medium mb-1">
-          Recipe (Cooklang)
+          Recipe (Cooklang) :)
         </label>
         <textarea
           id="source"
