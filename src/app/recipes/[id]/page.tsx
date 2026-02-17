@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/db";
-import { recipes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getRecipe } from "@/data/recipes";
 import RecipeView from "@/components/RecipeView";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +11,7 @@ export default async function RecipePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [recipe] = await db
-    .select()
-    .from(recipes)
-    .where(eq(recipes.id, parseInt(id)));
+  const recipe = await getRecipe(parseInt(id));
 
   if (!recipe) notFound();
 

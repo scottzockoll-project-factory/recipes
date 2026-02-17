@@ -1,15 +1,10 @@
 import Link from "next/link";
-import { db } from "@/db";
-import { recipes } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { getAllRecipes } from "@/data/recipes";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const allRecipes = await db
-    .select({ id: recipes.id, title: recipes.title })
-    .from(recipes)
-    .orderBy(desc(recipes.createdAt));
+  const allRecipes = await getAllRecipes();
 
   return (
     <div>
