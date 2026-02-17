@@ -150,7 +150,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
 
       {/* Title search */}
       <div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <input
             ref={titleRef}
             type="text"
@@ -160,7 +160,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             placeholder="Search by title..."
             className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
-          <kbd className="hidden sm:inline-flex shrink-0 items-center gap-0.5 text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
+          <kbd className="hidden sm:inline-flex shrink-0 w-8 justify-center items-center gap-0.5 text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
             <span>{"\u2318"}</span>
             <span>K</span>
           </kbd>
@@ -191,7 +191,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
 
       {/* Ingredient search */}
       <div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <input
             ref={ingredientRef}
             type="text"
@@ -201,7 +201,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             placeholder='Search by ingredients, e.g. tomato garlic "olive oil"'
             className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
-          <kbd className="hidden sm:inline-block shrink-0 text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
+          <kbd className="hidden sm:inline-flex shrink-0 w-8 justify-center items-center text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
             /
           </kbd>
         </div>

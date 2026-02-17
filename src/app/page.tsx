@@ -9,8 +9,13 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">
-      {/* Left column: recipe list */}
-      <div className="lg:w-1/2">
+      {/* Search: top on mobile, right column on desktop */}
+      <div className="order-first lg:order-last lg:w-1/2">
+        <SearchSection recipes={allRecipes} />
+      </div>
+
+      {/* Recipe list: below search on mobile, left column on desktop */}
+      <div className="mt-8 lg:mt-0 lg:w-1/2">
         <h2 className="text-xl font-semibold mb-6">All Recipes</h2>
 
         {allRecipes.length === 0 ? (
@@ -29,11 +34,6 @@ export default async function Home() {
             ))}
           </ul>
         )}
-      </div>
-
-      {/* Right column: search */}
-      <div className="mt-8 lg:mt-0 lg:w-1/2">
-        <SearchSection recipes={allRecipes} />
       </div>
     </div>
   );
