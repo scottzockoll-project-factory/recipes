@@ -1,11 +1,17 @@
 "use client";
 
+import CooklangEditor from "@/components/CooklangEditor";
+
 export default function RecipeForm({
   action,
   defaultValues,
+  knownIngredients = [],
+  knownCookware = [],
 }: {
   action: (formData: FormData) => void;
   defaultValues?: { slug?: string; title: string; source: string };
+  knownIngredients?: string[];
+  knownCookware?: string[];
 }) {
   const isEdit = !!defaultValues?.slug;
 
@@ -49,14 +55,14 @@ export default function RecipeForm({
         <label htmlFor="source" className="block text-sm font-medium mb-1">
           Recipe (Cooklang)
         </label>
-        <textarea
-          id="source"
+        <CooklangEditor
           name="source"
           required
           rows={12}
           defaultValue={defaultValues?.source}
           placeholder="Preheat the @oven to 350°F. Mix @flour{2%cups} with @sugar{1%cup}..."
-          className="w-full border border-stone-300 rounded px-3 py-2 bg-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+          knownIngredients={knownIngredients}
+          knownCookware={knownCookware}
         />
       </div>
       <button

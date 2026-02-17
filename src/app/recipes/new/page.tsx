@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
-import { createRecipe, isSlugAvailable } from "@/data/recipes";
+import { createRecipe, isSlugAvailable, getAllKnownNames } from "@/data/recipes";
 import RecipeForm from "@/components/RecipeForm";
 
-export default function NewRecipePage() {
+export default async function NewRecipePage() {
+  const { ingredients, cookware } = await getAllKnownNames();
+
   async function handleCreate(formData: FormData) {
     "use server";
     const slug = formData.get("slug") as string;
@@ -25,7 +27,11 @@ export default function NewRecipePage() {
   return (
     <div>
       <h1 className="text-xl font-semibold mb-6">New Recipe</h1>
-      <RecipeForm action={handleCreate} />
+      <RecipeForm
+        action={handleCreate}
+        knownIngredients={ingredients}
+        knownCookware={cookware}
+      />
     </div>
   );
 }

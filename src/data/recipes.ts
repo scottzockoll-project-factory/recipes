@@ -220,6 +220,35 @@ export async function updateRecipe(slug: string, title: string, source: string):
   return mockUpdateRecipe(slug, title, source);
 }
 
+export async function getAllKnownNames(): Promise<{
+  ingredients: string[];
+  cookware: string[];
+}> {
+  const allRecipes = useDb
+    ? await dbGetAllRecipesWithSource()
+    : mockGetAllRecipesWithSource();
+
+  const { Recipe: CooklangRecipe } = await import("@cooklang/cooklang-ts");
+
+  const ingredients = new Set<string>();
+  const cookware = new Set<string>();
+
+  for (const recipe of allRecipes) {
+    const parsed = new CooklangRecipe(recipe.source);
+    for (const ing of parsed.ingredients) {
+      ingredients.add(ing.name.trim());
+    }
+    for (const cw of parsed.cookwares) {
+      cookware.add(cw.name.trim());
+    }
+  }
+
+  return {
+    ingredients: [...ingredients].sort(),
+    cookware: [...cookware].sort(),
+  };
+}
+
 export async function isSlugAvailable(slug: string): Promise<boolean> {
   if (useDb) return dbIsSlugAvailable(slug);
   return mockIsSlugAvailable(slug);

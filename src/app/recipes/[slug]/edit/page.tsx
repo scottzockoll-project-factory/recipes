@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
-import { getRecipe, updateRecipe } from "@/data/recipes";
+import { getRecipe, updateRecipe, getAllKnownNames } from "@/data/recipes";
 import RecipeForm from "@/components/RecipeForm";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,10 @@ export default async function EditRecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const recipe = await getRecipe(slug);
+  const [recipe, { ingredients, cookware }] = await Promise.all([
+    getRecipe(slug),
+    getAllKnownNames(),
+  ]);
 
   if (!recipe) notFound();
 
@@ -30,6 +33,8 @@ export default async function EditRecipePage({
       <RecipeForm
         action={handleUpdate}
         defaultValues={{ slug: recipe.slug, title: recipe.title, source: recipe.source }}
+        knownIngredients={ingredients}
+        knownCookware={cookware}
       />
     </div>
   );
