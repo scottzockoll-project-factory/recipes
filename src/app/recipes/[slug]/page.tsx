@@ -21,7 +21,7 @@ export default async function RecipePage({
         <h1 className="text-xl font-semibold">{recipe.title}</h1>
         <Link
           href={`/recipes/${recipe.slug}/edit`}
-          className="text-sm text-stone-500 hover:text-stone-800 border border-stone-300 rounded px-3 py-1"
+          className="text-sm text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-600 rounded px-3 py-1"
         >
           Edit
         </Link>

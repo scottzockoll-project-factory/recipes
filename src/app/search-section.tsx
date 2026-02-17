@@ -158,9 +158,9 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             onChange={(e) => setTitleQuery(e.target.value)}
             onKeyDown={titleNav.handleKeyDown}
             placeholder="Search by title..."
-            className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
-          <kbd className="hidden sm:inline-flex shrink-0 items-center gap-0.5 text-xs text-stone-400 border border-stone-300 rounded px-1.5 py-0.5 font-mono">
+          <kbd className="hidden sm:inline-flex shrink-0 items-center gap-0.5 text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
             <span>{"\u2318"}</span>
             <span>K</span>
           </kbd>
@@ -168,16 +168,16 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
         {showTitleResults && (
           <ul className="mt-2 space-y-1">
             {titleResults.length === 0 ? (
-              <p className="text-sm text-stone-500">No recipes match that title.</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">No recipes match that title.</p>
             ) : (
               titleResults.map((r, i) => (
                 <li key={r.slug}>
                   <a
                     href={`/recipes/${r.slug}`}
-                    className={`block border border-stone-200 rounded px-4 py-3 text-sm transition-colors ${
+                    className={`block border border-stone-200 dark:border-stone-700 rounded px-4 py-3 text-sm transition-colors ${
                       i === titleNav.activeIndex
-                        ? "bg-stone-200"
-                        : "hover:bg-stone-100"
+                        ? "bg-stone-200 dark:bg-stone-700"
+                        : "hover:bg-stone-100 dark:hover:bg-stone-700"
                     }`}
                   >
                     {r.title}
@@ -199,9 +199,9 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             onChange={(e) => setIngredientInput(e.target.value)}
             onKeyDown={ingredientNav.handleKeyDown}
             placeholder='Search by ingredients, e.g. tomato garlic "olive oil"'
-            className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
-          <kbd className="hidden sm:inline-block shrink-0 text-xs text-stone-400 border border-stone-300 rounded px-1.5 py-0.5 font-mono">
+          <kbd className="hidden sm:inline-block shrink-0 text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
             /
           </kbd>
         </div>
@@ -211,7 +211,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             {ingredients.map((ing, i) => (
               <span
                 key={`${ing}-${i}`}
-                className="bg-stone-200 text-stone-700 text-xs rounded-full px-2.5 py-1"
+                className="bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs rounded-full px-2.5 py-1"
               >
                 {ing}
               </span>
@@ -220,28 +220,28 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
         )}
 
         {searching && (
-          <p className="text-sm text-stone-500 mt-2">Searching...</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-2">Searching...</p>
         )}
 
         {showIngredientResults && !searching && (
           <div className="mt-2">
             {ingredientResults.length === 0 ? (
-              <p className="text-sm text-stone-500">No recipes match those ingredients.</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">No recipes match those ingredients.</p>
             ) : (
               <ul className="space-y-2">
                 {ingredientResults.map((recipe, i) => (
                   <li key={recipe.slug}>
                     <a
                       href={`/recipes/${recipe.slug}`}
-                      className={`block border border-stone-200 rounded-lg p-4 transition-colors ${
+                      className={`block border border-stone-200 dark:border-stone-700 rounded-lg p-4 transition-colors ${
                         i === ingredientNav.activeIndex
-                          ? "bg-stone-200"
-                          : "hover:bg-stone-100"
+                          ? "bg-stone-200 dark:bg-stone-700"
+                          : "hover:bg-stone-100 dark:hover:bg-stone-700"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{recipe.title}</span>
-                        <span className="text-xs text-stone-500">
+                        <span className="text-xs text-stone-500 dark:text-stone-400">
                           {recipe.matchedIngredients.length}/{recipe.totalIngredients} ingredients
                         </span>
                       </div>
@@ -249,7 +249,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
                         {recipe.matchedIngredients.map((ing) => (
                           <span
                             key={ing}
-                            className="bg-green-100 text-green-800 text-xs rounded-full px-2 py-0.5"
+                            className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-xs rounded-full px-2 py-0.5"
                           >
                             {ing}
                           </span>

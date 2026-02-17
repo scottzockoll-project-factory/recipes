@@ -14,12 +14,12 @@ interface CooklangEditorProps {
 }
 
 const TOKEN_CLASSES: Record<string, string> = {
-  ingredient: "text-amber-700 font-medium",
-  cookware: "text-stone-600 font-medium",
-  timer: "text-blue-600 font-medium",
+  ingredient: "text-amber-700 dark:text-amber-400 font-medium",
+  cookware: "text-stone-600 dark:text-stone-400 font-medium",
+  timer: "text-blue-600 dark:text-blue-400 font-medium",
   comment: "text-stone-400 italic",
-  "metadata-key": "text-purple-600 font-medium",
-  "metadata-value": "text-purple-500",
+  "metadata-key": "text-purple-600 dark:text-purple-400 font-medium",
+  "metadata-value": "text-purple-500 dark:text-purple-400",
   text: "",
 };
 
@@ -247,7 +247,7 @@ export default function CooklangEditor({
 
   return (
     <div className="relative">
-      <div className="relative border border-stone-300 rounded overflow-hidden focus-within:ring-2 focus-within:ring-stone-500">
+      <div className="relative border border-stone-300 dark:border-stone-600 rounded overflow-hidden focus-within:ring-2 focus-within:ring-stone-500">
         {/* Backdrop with highlighted tokens */}
         <div
           ref={backdropRef}
@@ -276,7 +276,7 @@ export default function CooklangEditor({
           onKeyDown={handleKeyDown}
           onClick={handleClick}
           onScroll={syncScroll}
-          className="relative w-full px-3 py-2 font-mono text-sm bg-transparent text-transparent caret-stone-900 resize-y focus:outline-none whitespace-pre-wrap break-words"
+          className="relative w-full px-3 py-2 font-mono text-sm bg-transparent text-transparent caret-stone-900 dark:caret-stone-100 resize-y focus:outline-none whitespace-pre-wrap break-words"
           style={{ WebkitTextFillColor: "transparent" }}
           spellCheck={false}
         />
@@ -284,7 +284,7 @@ export default function CooklangEditor({
 
       {/* Autocomplete dropdown */}
       {autocomplete && autocomplete.items.length > 0 && (
-        <div className="absolute z-50 mt-1 w-64 max-h-48 overflow-y-auto bg-white border border-stone-300 rounded-md shadow-lg">
+        <div className="absolute z-50 mt-1 w-64 max-h-48 overflow-y-auto bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-md shadow-lg">
           {autocomplete.items.map((item, i) => (
             <button
               key={item}
@@ -296,8 +296,8 @@ export default function CooklangEditor({
               }}
               className={`w-full text-left px-3 py-1.5 text-sm ${
                 i === autocomplete.selectedIndex
-                  ? "bg-stone-100 text-stone-900"
-                  : "text-stone-700 hover:bg-stone-50"
+                  ? "bg-stone-100 dark:bg-stone-700 text-stone-900 dark:text-stone-100"
+                  : "text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700"
               }`}
             >
               <span className="text-stone-400 mr-1">

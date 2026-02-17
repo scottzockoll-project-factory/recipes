@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Scott's Recipes",
@@ -12,26 +13,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-stone-50 text-stone-900 min-h-screen">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 min-h-screen">
         <div className="max-w-5xl mx-auto px-4 py-8">
           <header className="mb-8 flex items-center justify-between">
-            <a href="/" className="text-2xl font-bold text-stone-800 hover:text-stone-600">
+            <a href="/" className="text-2xl font-bold text-stone-800 dark:text-stone-200 hover:text-stone-600 dark:hover:text-stone-400">
               Scott&apos;s Recipes
             </a>
             <nav className="flex items-center gap-4">
               <a
                 href="/suggestions"
-                className="text-stone-600 hover:text-stone-800 text-sm"
+                className="text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 text-sm"
               >
-                Suggestions
+                Jenny&apos;s Suggestions
               </a>
               <a
                 href="/recipes/new"
-                className="bg-stone-800 text-white px-4 py-2 rounded hover:bg-stone-700 text-sm"
+                className="bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-300 text-sm"
               >
                 New Recipe
               </a>
+              <ThemeToggle />
             </nav>
           </header>
           {children}

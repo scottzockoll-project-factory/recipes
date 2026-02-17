@@ -32,11 +32,9 @@ export default async function SuggestionsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-stone-800">Jenny&apos;s Suggestions</h1>
-
-      <form action={create} className="space-y-4 bg-white p-6 rounded-lg border border-stone-200">
+      <form action={create} className="space-y-4 bg-white dark:bg-stone-800 p-6 rounded-lg border border-stone-200 dark:border-stone-700">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-stone-700 mb-1">
+          <label htmlFor="title" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             Recipe title
           </label>
           <input
@@ -44,37 +42,37 @@ export default async function SuggestionsPage() {
             name="title"
             type="text"
             required
-            className="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-            placeholder="e.g. Grandma's banana bread"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
+            placeholder="e.g. soondubu"
           />
         </div>
         <div>
-          <label htmlFor="url" className="block text-sm font-medium text-stone-700 mb-1">
+          <label htmlFor="url" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             Link (optional)
           </label>
           <input
             id="url"
             name="url"
             type="url"
-            className="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
             placeholder="https://..."
           />
         </div>
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-stone-700 mb-1">
+          <label htmlFor="notes" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             Notes (optional)
           </label>
           <textarea
             id="notes"
             name="notes"
             rows={3}
-            className="w-full border border-stone-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
             placeholder="Any extra details..."
           />
         </div>
         <button
           type="submit"
-          className="bg-stone-800 text-white px-4 py-2 rounded hover:bg-stone-700 text-sm"
+          className="bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-300 text-sm"
         >
           Submit Suggestion
         </button>
@@ -85,7 +83,7 @@ export default async function SuggestionsPage() {
           {suggestions.map((s) => (
             <li
               key={s.id}
-              className="flex items-start justify-between gap-4 bg-white p-4 rounded-lg border border-stone-200"
+              className="flex items-start justify-between gap-4 bg-white dark:bg-stone-800 p-4 rounded-lg border border-stone-200 dark:border-stone-700"
             >
               <div className="min-w-0">
                 {s.url ? (
@@ -93,15 +91,15 @@ export default async function SuggestionsPage() {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-stone-800 underline hover:text-stone-600"
+                    className="font-medium text-stone-800 dark:text-stone-200 underline hover:text-stone-600 dark:hover:text-stone-400"
                   >
                     {s.title}
                   </a>
                 ) : (
-                  <span className="font-medium text-stone-800">{s.title}</span>
+                  <span className="font-medium text-stone-800 dark:text-stone-200">{s.title}</span>
                 )}
                 {s.notes && (
-                  <p className="text-sm text-stone-500 mt-1">{s.notes}</p>
+                  <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">{s.notes}</p>
                 )}
               </div>
               <form action={remove}>
@@ -119,7 +117,7 @@ export default async function SuggestionsPage() {
       )}
 
       {suggestions.length === 0 && (
-        <p className="text-stone-500 text-sm">No suggestions yet. Be the first!</p>
+        <p className="text-stone-500 dark:text-stone-400 text-sm">No suggestions yet. Be the first!</p>
       )}
     </div>
   );

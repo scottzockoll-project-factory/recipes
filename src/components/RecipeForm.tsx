@@ -22,7 +22,7 @@ export default function RecipeForm({
           URL Slug
         </label>
         {isEdit ? (
-          <p className="text-sm text-stone-600 font-mono bg-stone-100 rounded px-3 py-2">
+          <p className="text-sm text-stone-600 dark:text-stone-400 font-mono bg-stone-100 dark:bg-stone-700 rounded px-3 py-2">
             {defaultValues.slug}
           </p>
         ) : (
@@ -34,7 +34,7 @@ export default function RecipeForm({
             pattern="[a-z0-9\-]+"
             title="Lowercase letters, numbers, and hyphens only"
             placeholder="my-recipe-name"
-            className="w-full border border-stone-300 rounded px-3 py-2 bg-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+            className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 bg-white dark:bg-stone-800 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
           />
         )}
       </div>
@@ -48,7 +48,7 @@ export default function RecipeForm({
           type="text"
           required
           defaultValue={defaultValues?.title}
-          className="w-full border border-stone-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-stone-500"
+          className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-500"
         />
       </div>
       <div>
@@ -67,7 +67,7 @@ export default function RecipeForm({
       </div>
       <button
         type="submit"
-        className="bg-stone-800 text-white px-4 py-2 rounded hover:bg-stone-700"
+        className="bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-300"
       >
         Save Recipe
       </button>
