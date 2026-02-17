@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Recipes",
+  title: "Scott's Recipes",
   description: "A Cooklang recipe manager",
 };
 
@@ -14,10 +14,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-stone-50 text-stone-900 min-h-screen">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <header className="mb-8">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <header className="mb-8 flex items-center justify-between">
             <a href="/" className="text-2xl font-bold text-stone-800 hover:text-stone-600">
-              Recipes
+              Scott&apos;s Recipes
+            </a>
+            <a
+              href="/recipes/new"
+              className="bg-stone-800 text-white px-4 py-2 rounded hover:bg-stone-700 text-sm"
+            >
+              New Recipe
             </a>
           </header>
           {children}

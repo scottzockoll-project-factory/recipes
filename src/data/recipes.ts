@@ -112,6 +112,72 @@ async function dbUpdateRecipe(id: number, title: string, source: string): Promis
     .where(eq(recipes.id, id));
 }
 
+// --- Search helpers ---
+
+type RecipeWithSource = { id: number; title: string; source: string };
+
+function mockGetAllRecipesWithSource(): RecipeWithSource[] {
+  return mockRecipes.map(({ id, title, source }) => ({ id, title, source }));
+}
+
+async function dbGetAllRecipesWithSource(): Promise<RecipeWithSource[]> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  return db
+    .select({ id: recipes.id, title: recipes.title, source: recipes.source })
+    .from(recipes);
+}
+
+export interface IngredientSearchResult {
+  id: number;
+  title: string;
+  matchedIngredients: string[];
+  totalIngredients: number;
+}
+
+export async function searchRecipesByIngredients(
+  userIngredients: string[],
+): Promise<IngredientSearchResult[]> {
+  const allRecipes = useDb
+    ? await dbGetAllRecipesWithSource()
+    : mockGetAllRecipesWithSource();
+
+  const { Recipe: CooklangRecipe } = await import("@cooklang/cooklang-ts");
+
+  const normalized = userIngredients.map((i) => i.toLowerCase().trim());
+  if (normalized.length === 0) return [];
+
+  const results: IngredientSearchResult[] = [];
+
+  for (const recipe of allRecipes) {
+    const parsed = new CooklangRecipe(recipe.source);
+    const recipeIngredients = parsed.ingredients.map((ing) =>
+      ing.name.toLowerCase().trim(),
+    );
+
+    const matched = new Set<string>();
+    for (const userIng of normalized) {
+      for (const recipeIng of recipeIngredients) {
+        if (recipeIng.includes(userIng) || userIng.includes(recipeIng)) {
+          matched.add(recipeIng);
+        }
+      }
+    }
+
+    if (matched.size > 0) {
+      results.push({
+        id: recipe.id,
+        title: recipe.title,
+        matchedIngredients: [...matched],
+        totalIngredients: recipeIngredients.length,
+      });
+    }
+  }
+
+  results.sort((a, b) => b.matchedIngredients.length - a.matchedIngredients.length);
+  return results;
+}
+
 // --- Public API ---
 
 const useDb = !!process.env.DATABASE_URL;
