@@ -1,7 +1,20 @@
+"use client";
+
+import { useState } from "react";
 import { Recipe } from "@cooklang/cooklang-ts";
 
 export default function RecipeView({ source }: { source: string }) {
   const recipe = new Recipe(source);
+  const [checked, setChecked] = useState<Set<number>>(new Set());
+
+  function toggleIngredient(index: number) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -22,14 +35,24 @@ export default function RecipeView({ source }: { source: string }) {
       {recipe.ingredients.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-2">Ingredients</h2>
-          <ul className="list-disc list-inside space-y-1 text-sm">
+          <ul className="space-y-1 text-sm">
             {recipe.ingredients.map((ing, i) => (
               <li key={i}>
-                {ing.quantity && ing.quantity !== "some"
-                  ? `${ing.quantity} `
-                  : ""}
-                {ing.units ? `${ing.units} ` : ""}
-                {ing.name}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checked.has(i)}
+                    onChange={() => toggleIngredient(i)}
+                    className="accent-stone-700 dark:accent-stone-300"
+                  />
+                  <span className={checked.has(i) ? "line-through text-stone-400 dark:text-stone-500" : ""}>
+                    {ing.quantity && ing.quantity !== "some"
+                      ? `${ing.quantity} `
+                      : ""}
+                    {ing.units ? `${ing.units} ` : ""}
+                    {ing.name}
+                  </span>
+                </label>
               </li>
             ))}
           </ul>
