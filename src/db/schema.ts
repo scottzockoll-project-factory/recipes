@@ -1,4 +1,6 @@
 import {
+  boolean,
+  json,
   pgTable,
   serial,
   text,
@@ -11,6 +13,15 @@ export const suggestions = pgTable("suggestions", {
   url: text("url"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pantryProfiles = pgTable("pantry_profiles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  ingredients: json("ingredients").$type<string[]>().notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const recipes = pgTable("recipes", {

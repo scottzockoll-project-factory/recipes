@@ -1,9 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { getAllRecipesWithSource } from "@/data/recipes";
+import { getAllProfiles } from "@/data/profiles";
 import DecideClient from "@/components/DecideClient";
 
 export default async function DecidePage() {
-  const recipes = await getAllRecipesWithSource();
-  return <DecideClient recipes={recipes} />;
+  const [recipes, profiles] = await Promise.all([getAllRecipesWithSource(), getAllProfiles()]);
+  return <DecideClient recipes={recipes} initialProfiles={profiles} />;
 }

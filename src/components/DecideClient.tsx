@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
 import type { Timer } from "@cooklang/cooklang-ts/dist/cooklang";
-import { X } from "lucide-react";
+import { Pencil, Star, Trash2, X } from "lucide-react";
+import type { Profile } from "@/data/profiles";
+import {
+  createProfileAction,
+  updateProfileAction,
+  deleteProfileAction,
+  setDefaultProfileAction,
+} from "@/app/decide/actions";
 
 interface RecipeWithSource {
   slug: string;
   title: string;
   source: string;
-}
-
-interface Profile {
-  id: string;
-  name: string;
-  ingredients: string[];
 }
 
 interface Recommendation {
@@ -25,8 +26,6 @@ interface Recommendation {
   totalIngredients: number;
   cookingTimeSeconds: number;
 }
-
-const PROFILES_KEY = "recipe-profiles";
 
 function toSeconds(quantity: string | number, units: string): number {
   const qty = typeof quantity === "string" ? parseFloat(quantity) : quantity;
@@ -106,11 +105,13 @@ function ProfileEditForm({
   initialIngredients,
   onSave,
   onCancel,
+  saving,
 }: {
   initialName: string;
   initialIngredients: string[];
   onSave: (name: string, ingredients: string[]) => void;
   onCancel: () => void;
+  saving: boolean;
 }) {
   const [name, setName] = useState(initialName);
   const [ingredients, setIngredients] = useState<string[]>(initialIngredients);
@@ -185,12 +186,14 @@ function ProfileEditForm({
       <div className="flex gap-2">
         <button
           onClick={() => { if (name.trim()) onSave(name.trim(), ingredients); }}
-          className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+          disabled={saving || !name.trim()}
+          className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white transition-colors"
         >
-          Save
+          {saving ? "Saving…" : "Save"}
         </button>
         <button
           onClick={onCancel}
+          disabled={saving}
           className="text-sm px-3 py-1.5 rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 transition-colors"
         >
           Cancel
@@ -200,29 +203,22 @@ function ProfileEditForm({
   );
 }
 
-export default function DecideClient({ recipes }: { recipes: RecipeWithSource[] }) {
-  const [mounted, setMounted] = useState(false);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+export default function DecideClient({
+  recipes,
+  initialProfiles,
+}: {
+  recipes: RecipeWithSource[];
+  initialProfiles: Profile[];
+}) {
+  const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(
+    () => initialProfiles.find((p) => p.isDefault)?.id ?? null,
+  );
   const [extraIngredients, setExtraIngredients] = useState<string[]>([]);
   const [addInput, setAddInput] = useState("");
   const [showManage, setShowManage] = useState(false);
-  const [editingId, setEditingId] = useState<string | "new" | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PROFILES_KEY);
-      if (raw) setProfiles(JSON.parse(raw));
-    } catch {
-      // ignore
-    }
-    setMounted(true);
-  }, []);
-
-  function saveProfiles(next: Profile[]) {
-    setProfiles(next);
-    localStorage.setItem(PROFILES_KEY, JSON.stringify(next));
-  }
+  const [editingId, setEditingId] = useState<number | "new" | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function addExtra(raw: string) {
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -266,24 +262,36 @@ export default function DecideClient({ recipes }: { recipes: RecipeWithSource[] 
     [recipes, allIngredients],
   );
 
-  function handleCreateProfile(name: string, ingredients: string[]) {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    saveProfiles([...profiles, { id, name, ingredients }]);
-    setEditingId(null);
+  async function handleCreateProfile(name: string, ingredients: string[]) {
+    setSaving(true);
+    try {
+      const isFirst = profiles.length === 0;
+      const profile = await createProfileAction(name, ingredients, isFirst);
+      setProfiles((prev) =>
+        isFirst ? [{ ...profile, isDefault: true }] : [...prev, profile],
+      );
+      if (isFirst) setSelectedProfileId(profile.id);
+      setEditingId(null);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleUpdateProfile(id: string, name: string, ingredients: string[]) {
-    saveProfiles(profiles.map((p) => (p.id === id ? { ...p, name, ingredients } : p)));
+  async function handleUpdateProfile(id: number, name: string, ingredients: string[]) {
+    setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, name, ingredients } : p)));
     setEditingId(null);
+    await updateProfileAction(id, name, ingredients);
   }
 
-  function handleDeleteProfile(id: string) {
-    saveProfiles(profiles.filter((p) => p.id !== id));
+  async function handleDeleteProfile(id: number) {
+    setProfiles((prev) => prev.filter((p) => p.id !== id));
     if (selectedProfileId === id) setSelectedProfileId(null);
+    await deleteProfileAction(id);
   }
 
-  if (!mounted) {
-    return <div className="max-w-2xl mx-auto px-4 py-8 animate-pulse h-64 rounded-lg bg-stone-100 dark:bg-stone-800" />;
+  async function handleSetDefault(id: number) {
+    setProfiles((prev) => prev.map((p) => ({ ...p, isDefault: p.id === id })));
+    await setDefaultProfileAction(id);
   }
 
   const matchedRecipes = recommendations.filter((r) => r.matchedIngredients.length > 0);
@@ -300,12 +308,14 @@ export default function DecideClient({ recipes }: { recipes: RecipeWithSource[] 
           </label>
           <select
             value={selectedProfileId ?? ""}
-            onChange={(e) => setSelectedProfileId(e.target.value || null)}
+            onChange={(e) => setSelectedProfileId(e.target.value ? Number(e.target.value) : null)}
             className="flex-1 text-sm px-2.5 py-1.5 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
             <option value="">— No profile —</option>
             {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <option key={p.id} value={p.id}>
+                {p.name}{p.isDefault ? " (default)" : ""}
+              </option>
             ))}
           </select>
           <button
@@ -331,26 +341,44 @@ export default function DecideClient({ recipes }: { recipes: RecipeWithSource[] 
                 initialIngredients={[]}
                 onSave={handleCreateProfile}
                 onCancel={() => setEditingId(null)}
+                saving={saving}
               />
             )}
             {profiles.map((profile) => (
-              <div key={profile.id}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{profile.name}</span>
-                  <div className="flex gap-2">
+              <div key={profile.id} className="pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-medium truncate">{profile.name}</span>
+                    {profile.isDefault && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shrink-0">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!profile.isDefault && (
+                      <button
+                        onClick={() => handleSetDefault(profile.id)}
+                        className="text-stone-400 dark:text-stone-500 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                        aria-label={`Set ${profile.name} as default`}
+                        title="Set as default"
+                      >
+                        <Star size={14} />
+                      </button>
+                    )}
                     <button
                       onClick={() => setEditingId(profile.id)}
-                      className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                      className="text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
                       aria-label={`Edit ${profile.name}`}
                     >
-                      ✏
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteProfile(profile.id)}
-                      className="text-xs text-stone-500 dark:text-stone-400 hover:text-red-500"
+                      className="text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors"
                       aria-label={`Delete ${profile.name}`}
                     >
-                      🗑
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -360,6 +388,7 @@ export default function DecideClient({ recipes }: { recipes: RecipeWithSource[] 
                     initialIngredients={profile.ingredients}
                     onSave={(name, ingredients) => handleUpdateProfile(profile.id, name, ingredients)}
                     onCancel={() => setEditingId(null)}
+                    saving={false}
                   />
                 )}
               </div>
