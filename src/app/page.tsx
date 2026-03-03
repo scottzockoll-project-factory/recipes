@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { getAllRecipes } from "@/data/recipes";
+import { ChevronRight } from "lucide-react";
+import { getAllRecipes, getArchivedRecipes } from "@/data/recipes";
 import SearchSection from "./search-section";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const allRecipes = await getAllRecipes();
+  const [allRecipes, archivedRecipes] = await Promise.all([
+    getAllRecipes(),
+    getArchivedRecipes(),
+  ]);
 
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">
@@ -33,6 +37,27 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+        )}
+
+        {archivedRecipes.length > 0 && (
+          <details className="mt-6 group">
+            <summary className="text-sm text-stone-400 dark:text-stone-500 cursor-pointer hover:text-stone-600 dark:hover:text-stone-300 list-none flex items-center gap-1 select-none">
+              <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+              {archivedRecipes.length} archived
+            </summary>
+            <ul className="mt-2 space-y-2">
+              {archivedRecipes.map((recipe) => (
+                <li key={recipe.slug}>
+                  <Link
+                    href={`/recipes/${recipe.slug}`}
+                    className="block border border-stone-200 dark:border-stone-700 rounded px-4 py-3 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-400 dark:text-stone-500 text-sm"
+                  >
+                    {recipe.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </div>
     </div>

@@ -19,6 +19,7 @@ Add @canned tomatoes{400%g} and @salt{1%tsp}. Simmer for ~{15%minutes}.
 Toss the cooked pasta with the sauce and top with @parmesan cheese{50%g}, grated.`,
     createdAt: new Date("2025-01-15"),
     updatedAt: new Date("2025-01-15"),
+    archivedAt: null,
   },
   {
     id: 2,
@@ -31,6 +32,7 @@ Melt @butter{1%tbsp} in a non-stick pan over low heat. Pour in the eggs and stir
 Toast @bread{2%slices} and serve the eggs on top. Garnish with @chives{1%tbsp}, chopped.`,
     createdAt: new Date("2025-02-10"),
     updatedAt: new Date("2025-02-10"),
+    archivedAt: null,
   },
   {
     id: 3,
@@ -43,6 +45,7 @@ Whisk together @olive oil{3%tbsp}, @lemon juice{1%tbsp}, @dijon mustard{1%tsp}, 
 Toss the greens with the dressing. Top with @cherry tomatoes{100%g}, halved, and @cucumber{1}, sliced.`,
     createdAt: new Date("2025-03-05"),
     updatedAt: new Date("2025-03-05"),
+    archivedAt: null,
   },
 ];
 
@@ -51,6 +54,14 @@ let nextId = 4;
 
 function mockGetAllRecipes(): { slug: string; title: string }[] {
   return [...mockRecipes]
+    .filter((r) => !r.archivedAt)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .map(({ slug, title }) => ({ slug, title }));
+}
+
+function mockGetArchivedRecipes(): { slug: string; title: string }[] {
+  return [...mockRecipes]
+    .filter((r) => !!r.archivedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .map(({ slug, title }) => ({ slug, title }));
 }
@@ -64,7 +75,7 @@ function mockCreateRecipe(slug: string, title: string, source: string): { slug: 
     throw new Error(`A recipe with slug "${slug}" already exists`);
   }
   const now = new Date();
-  const recipe: Recipe = { id: nextId++, slug, title, source, createdAt: now, updatedAt: now };
+  const recipe: Recipe = { id: nextId++, slug, title, source, createdAt: now, updatedAt: now, archivedAt: null };
   mockRecipes.push(recipe);
   return { slug: recipe.slug };
 }
@@ -78,6 +89,16 @@ function mockUpdateRecipe(slug: string, title: string, source: string): void {
   }
 }
 
+function mockArchiveRecipe(slug: string): void {
+  const recipe = mockRecipes.find((r) => r.slug === slug);
+  if (recipe) recipe.archivedAt = new Date();
+}
+
+function mockUnarchiveRecipe(slug: string): void {
+  const recipe = mockRecipes.find((r) => r.slug === slug);
+  if (recipe) recipe.archivedAt = null;
+}
+
 function mockIsSlugAvailable(slug: string): boolean {
   return !mockRecipes.some((r) => r.slug === slug);
 }
@@ -87,10 +108,22 @@ function mockIsSlugAvailable(slug: string): boolean {
 async function dbGetAllRecipes(): Promise<{ slug: string; title: string }[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
-  const { desc } = await import("drizzle-orm");
+  const { desc, isNull } = await import("drizzle-orm");
   return db
     .select({ slug: recipes.slug, title: recipes.title })
     .from(recipes)
+    .where(isNull(recipes.archivedAt))
+    .orderBy(desc(recipes.createdAt));
+}
+
+async function dbGetArchivedRecipes(): Promise<{ slug: string; title: string }[]> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const { desc, isNotNull } = await import("drizzle-orm");
+  return db
+    .select({ slug: recipes.slug, title: recipes.title })
+    .from(recipes)
+    .where(isNotNull(recipes.archivedAt))
     .orderBy(desc(recipes.createdAt));
 }
 
@@ -122,6 +155,26 @@ async function dbUpdateRecipe(slug: string, title: string, source: string): Prom
     .where(eq(recipes.slug, slug));
 }
 
+async function dbArchiveRecipe(slug: string): Promise<void> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db
+    .update(recipes)
+    .set({ archivedAt: new Date() })
+    .where(eq(recipes.slug, slug));
+}
+
+async function dbUnarchiveRecipe(slug: string): Promise<void> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db
+    .update(recipes)
+    .set({ archivedAt: null })
+    .where(eq(recipes.slug, slug));
+}
+
 async function dbIsSlugAvailable(slug: string): Promise<boolean> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
@@ -135,15 +188,19 @@ async function dbIsSlugAvailable(slug: string): Promise<boolean> {
 type RecipeWithSource = { slug: string; title: string; source: string };
 
 function mockGetAllRecipesWithSource(): RecipeWithSource[] {
-  return mockRecipes.map(({ slug, title, source }) => ({ slug, title, source }));
+  return mockRecipes
+    .filter((r) => !r.archivedAt)
+    .map(({ slug, title, source }) => ({ slug, title, source }));
 }
 
 async function dbGetAllRecipesWithSource(): Promise<RecipeWithSource[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
+  const { isNull } = await import("drizzle-orm");
   return db
     .select({ slug: recipes.slug, title: recipes.title, source: recipes.source })
-    .from(recipes);
+    .from(recipes)
+    .where(isNull(recipes.archivedAt));
 }
 
 export interface IngredientSearchResult {
@@ -205,6 +262,11 @@ export async function getAllRecipes(): Promise<{ slug: string; title: string }[]
   return mockGetAllRecipes();
 }
 
+export async function getArchivedRecipes(): Promise<{ slug: string; title: string }[]> {
+  if (useDb) return dbGetArchivedRecipes();
+  return mockGetArchivedRecipes();
+}
+
 export async function getRecipe(slug: string): Promise<Recipe | undefined> {
   if (useDb) return dbGetRecipe(slug);
   return mockGetRecipe(slug);
@@ -218,6 +280,16 @@ export async function createRecipe(slug: string, title: string, source: string):
 export async function updateRecipe(slug: string, title: string, source: string): Promise<void> {
   if (useDb) return dbUpdateRecipe(slug, title, source);
   return mockUpdateRecipe(slug, title, source);
+}
+
+export async function archiveRecipe(slug: string): Promise<void> {
+  if (useDb) return dbArchiveRecipe(slug);
+  return mockArchiveRecipe(slug);
+}
+
+export async function unarchiveRecipe(slug: string): Promise<void> {
+  if (useDb) return dbUnarchiveRecipe(slug);
+  return mockUnarchiveRecipe(slug);
 }
 
 export async function getAllKnownNames(): Promise<{
