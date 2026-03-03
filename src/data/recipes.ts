@@ -325,3 +325,8 @@ export async function isSlugAvailable(slug: string): Promise<boolean> {
   if (useDb) return dbIsSlugAvailable(slug);
   return mockIsSlugAvailable(slug);
 }
+
+export async function getAllRecipesWithSource(): Promise<RecipeWithSource[]> {
+  if (useDb) return dbGetAllRecipesWithSource();
+  return mockGetAllRecipesWithSource();
+}

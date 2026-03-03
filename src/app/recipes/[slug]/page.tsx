@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getRecipe, archiveRecipe, unarchiveRecipe } from "@/data/recipes";
 import RecipeView from "@/components/RecipeView";
+import ArchiveButton from "@/components/ArchiveButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +46,10 @@ export default async function RecipePage({
           >
             Edit
           </Link>
-          <form action={recipe.archivedAt ? handleUnarchive : handleArchive}>
-            <button
-              type="submit"
-              className="text-sm text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 border border-stone-300 dark:border-stone-600 rounded px-3 py-1"
-            >
-              {recipe.archivedAt ? "Unarchive" : "Archive"}
-            </button>
-          </form>
+          <ArchiveButton
+            action={recipe.archivedAt ? handleUnarchive : handleArchive}
+            isArchived={!!recipe.archivedAt}
+          />
         </div>
       </div>
       <RecipeView source={recipe.source} />

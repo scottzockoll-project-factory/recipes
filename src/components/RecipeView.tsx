@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Recipe } from "@cooklang/cooklang-ts";
 import type { Ingredient, Timer } from "@cooklang/cooklang-ts/dist/cooklang";
-import { Check, Timer as TimerIcon, X } from "lucide-react";
+import { Check, Eye, EyeOff, Timer as TimerIcon, X } from "lucide-react";
 
 interface ActiveTimer {
   id: string;
@@ -54,10 +54,16 @@ export default function RecipeView({ source }: { source: string }) {
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [timers, setTimers] = useState<ActiveTimer[]>([]);
   const [showFlash, setShowFlash] = useState(false);
-  const [flashKey, setFlashKey] = useState(0);
+  const [showUnits, setShowUnits] = useState(true);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const prevRemainingRef = useRef<Map<string, number>>(new Map());
+  const soundIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("recipe-show-units");
+    if (stored === "false") setShowUnits(false);
+  }, []);
 
   // Prevent screen sleep while recipe is open
   useEffect(() => {
@@ -85,7 +91,7 @@ export default function RecipeView({ source }: { source: string }) {
     return () => clearInterval(interval);
   }, [timers.length]);
 
-  // Detect timer completion → sound + flash
+  // Detect timer completion → looping sound + flash until dismissed
   useEffect(() => {
     let anyJustDone = false;
     for (const t of timers) {
@@ -99,12 +105,29 @@ export default function RecipeView({ source }: { source: string }) {
     for (const id of prevRemainingRef.current.keys()) {
       if (!currentIds.has(id)) prevRemainingRef.current.delete(id);
     }
-    if (anyJustDone) {
-      playTimerSound();
-      setShowFlash(true);
-      setFlashKey((k) => k + 1);
+
+    const anyDone = timers.some((t) => t.remaining === 0);
+    setShowFlash(anyDone);
+
+    if (anyDone) {
+      if (anyJustDone && !soundIntervalRef.current) {
+        playTimerSound();
+        soundIntervalRef.current = setInterval(playTimerSound, 3000);
+      }
+    } else {
+      if (soundIntervalRef.current) {
+        clearInterval(soundIntervalRef.current);
+        soundIntervalRef.current = null;
+      }
     }
   }, [timers]);
+
+  // Clean up sound interval on unmount
+  useEffect(() => {
+    return () => {
+      if (soundIntervalRef.current) clearInterval(soundIntervalRef.current);
+    };
+  }, []);
 
   function playTimerSound() {
     const ctx = audioCtxRef.current;
@@ -236,7 +259,23 @@ export default function RecipeView({ source }: { source: string }) {
 
         {recipe.steps.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold mb-2">Steps</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold">Steps</h2>
+              <button
+                onClick={() => {
+                  const next = !showUnits;
+                  setShowUnits(next);
+                  localStorage.setItem("recipe-show-units", String(next));
+                }}
+                className="inline-flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+              >
+                {showUnits ? (
+                  <><Eye size={13} /> Hide units</>
+                ) : (
+                  <><EyeOff size={13} /> Show units</>
+                )}
+              </button>
+            </div>
             <ol className="space-y-3 text-sm list-none">
               {recipe.steps.map((step, i) => {
                 const done = checkedSteps.has(i);
@@ -271,7 +310,7 @@ export default function RecipeView({ source }: { source: string }) {
                                     : "text-amber-700 dark:text-amber-400"
                                 }`}
                               >
-                                {ingredientLabel(token)}
+                                {showUnits ? ingredientLabel(token) : token.name}
                               </span>
                             );
                           case "cookware":
@@ -356,10 +395,8 @@ export default function RecipeView({ source }: { source: string }) {
 
       {showFlash && (
         <div
-          key={flashKey}
           className="fixed inset-0 pointer-events-none z-[100] border-[5px] border-green-500"
-          style={{ animation: "recipe-timer-flash 0.4s ease-in-out 8" }}
-          onAnimationEnd={() => setShowFlash(false)}
+          style={{ animation: "recipe-timer-flash 0.8s ease-in-out infinite" }}
         />
       )}
     </>
