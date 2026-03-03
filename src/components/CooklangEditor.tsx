@@ -128,9 +128,18 @@ export default function CooklangEditor({
           ? [...new Set([...knownIngredients, ...currentNames.ingredients])]
           : [...new Set([...knownCookware, ...currentNames.cookware])];
 
+      const knownPool = ctx.trigger === "@" ? knownIngredients : knownCookware;
       const query = ctx.query.toLowerCase();
       const filtered = pool
-        .filter((n) => n.toLowerCase().includes(query))
+        .filter((n) => {
+          if (!n.toLowerCase().includes(query)) return false;
+          // Exclude the literal query itself unless it exists as a confirmed known item
+          if (
+            n.toLowerCase() === query &&
+            !knownPool.some((k) => k.toLowerCase() === query)
+          ) return false;
+          return true;
+        })
         .sort((a, b) => {
           // Prioritize starts-with matches
           const aStarts = a.toLowerCase().startsWith(query) ? 0 : 1;
