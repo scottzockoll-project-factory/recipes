@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
 import type { Timer } from "@cooklang/cooklang-ts/dist/cooklang";
-import { Pencil, Star, Trash2, X } from "lucide-react";
+import { Pencil, Shuffle, Star, Trash2, X } from "lucide-react";
 import type { Profile } from "@/data/profiles";
 import {
   createProfileAction,
@@ -47,6 +47,14 @@ function formatCookingTime(seconds: number): string {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function seededHash(str: string, seed: number): number {
+  let h = seed * 2654435761;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 2654435761);
+  }
+  return h >>> 0;
 }
 
 function computeRecommendations(
@@ -219,6 +227,7 @@ export default function DecideClient({
   const [showManage, setShowManage] = useState(false);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
 
   function addExtra(raw: string) {
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -257,10 +266,15 @@ export default function DecideClient({
     return result;
   }, [profileIngredients, uniqueExtras]);
 
-  const recommendations = useMemo(
-    () => computeRecommendations(recipes, allIngredients),
-    [recipes, allIngredients],
-  );
+  const recommendations = useMemo(() => {
+    const recs = computeRecommendations(recipes, allIngredients);
+    if (shuffleSeed === 0) return recs;
+    return [...recs].sort((a, b) => {
+      const ratioA = a.totalIngredients > 0 ? a.matchedIngredients.length / a.totalIngredients : 0;
+      const ratioB = b.totalIngredients > 0 ? b.matchedIngredients.length / b.totalIngredients : 0;
+      return (ratioB - ratioA) || seededHash(a.slug, shuffleSeed) - seededHash(b.slug, shuffleSeed);
+    });
+  }, [recipes, allIngredients, shuffleSeed]);
 
   async function handleCreateProfile(name: string, ingredients: string[]) {
     setSaving(true);
@@ -454,20 +468,26 @@ export default function DecideClient({
             ))}
           </div>
         )}
-        {selectedProfileId && profileIngredients.length > 0 && (
-          <p className="text-xs text-stone-400 dark:text-stone-500">
-            Muted chips are from your profile. Dark chips are extras you added.
-          </p>
-        )}
       </div>
 
       {/* Results */}
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">
-          {allIngredients.length === 0
-            ? "Add ingredients above to see suggestions"
-            : `${matchedRecipes.length} recipe${matchedRecipes.length !== 1 ? "s" : ""} found`}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">
+            {allIngredients.length === 0
+              ? "Add ingredients above to see suggestions"
+              : `${matchedRecipes.length} recipe${matchedRecipes.length !== 1 ? "s" : ""} found`}
+          </h2>
+          {matchedRecipes.length > 1 && (
+            <button
+              onClick={() => setShuffleSeed(Math.floor(Math.random() * 1_000_000) + 1)}
+              className="inline-flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+            >
+              <Shuffle size={13} />
+              Shuffle
+            </button>
+          )}
+        </div>
         {matchedRecipes.map((rec) => {
           const ratio =
             rec.totalIngredients > 0
