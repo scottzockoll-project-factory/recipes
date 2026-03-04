@@ -20,7 +20,8 @@ export default async function NewRecipePage() {
       throw new Error(`A recipe with slug "${slug}" already exists`);
     }
 
-    await createRecipe(slug, title, source);
+    const labels = formData.getAll("labels") as string[];
+    await createRecipe(slug, title, source, labels);
     redirect(`/recipes/${slug}`);
   }
 

@@ -48,8 +48,18 @@ const CIRCLE_UNCHECKED =
 const CIRCLE_CHECKED =
   "bg-stone-700 dark:bg-stone-300 border-stone-700 dark:border-stone-300";
 
+function extractAllMetadata(source: string): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [];
+  for (const line of source.split("\n")) {
+    const m = line.match(/^>>\s*([^:]+):\s*(.*)$/);
+    if (m) pairs.push([m[1].trim(), m[2].trim()]);
+  }
+  return pairs;
+}
+
 export default function RecipeView({ source }: { source: string }) {
   const recipe = new Recipe(source);
+  const metadataPairs = extractAllMetadata(source);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [timers, setTimers] = useState<ActiveTimer[]>([]);
@@ -205,12 +215,12 @@ export default function RecipeView({ source }: { source: string }) {
       <style>{`@keyframes recipe-timer-flash{0%,100%{opacity:1}50%{opacity:0}}`}</style>
 
       <div className="space-y-6">
-        {Object.keys(recipe.metadata).length > 0 && (
+        {metadataPairs.length > 0 && (
           <div>
             <h2 className="text-lg font-semibold mb-2">Info</h2>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              {Object.entries(recipe.metadata).map(([key, value]) => (
-                <div key={key} className="contents">
+              {metadataPairs.map(([key, value], i) => (
+                <div key={i} className="contents">
                   <dt className="font-medium text-stone-600 dark:text-stone-400">{key}</dt>
                   <dd>{value}</dd>
                 </div>

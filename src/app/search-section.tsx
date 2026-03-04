@@ -7,7 +7,7 @@ import { searchByIngredients } from "@/app/search/actions";
 import type { IngredientSearchResult } from "@/data/recipes";
 
 interface SearchSectionProps {
-  recipes: { slug: string; title: string }[];
+  recipes: { slug: string; title: string; labels: string[] }[];
 }
 
 interface ResultItem {
@@ -61,12 +61,20 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
   const [ingredientInput, setIngredientInput] = useState("");
   const [ingredientResults, setIngredientResults] = useState<IngredientSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+
+  const allLabels = [...new Set(recipes.flatMap((r) => r.labels))].sort();
 
   const titleRef = useRef<HTMLInputElement>(null);
   const ingredientRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const ingredients = parseIngredients(ingredientInput);
+
+  // Label filter (client-side)
+  const labelResults = selectedLabel
+    ? recipes.filter((r) => r.labels.includes(selectedLabel))
+    : [];
 
   // Title search (client-side filter)
   const titleResults = titleQuery.trim()
@@ -141,12 +149,52 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
     titleRef.current?.focus();
   }, []);
 
+  const showLabelResults = selectedLabel !== null;
   const showTitleResults = titleQuery.trim().length > 0;
   const showIngredientResults = ingredients.length > 0;
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Search</h2>
+
+      {/* Label filter */}
+      {allLabels.length > 0 && (
+        <div>
+          <div className="flex flex-wrap gap-1.5">
+            {allLabels.map((label) => (
+              <button
+                key={label}
+                onClick={() => setSelectedLabel(selectedLabel === label ? null : label)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  selectedLabel === label
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+                    : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-600 hover:border-amber-400 dark:hover:border-amber-600"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {showLabelResults && (
+            <ul className="mt-2 space-y-1">
+              {labelResults.length === 0 ? (
+                <p className="text-sm text-stone-500 dark:text-stone-400">No recipes with that label.</p>
+              ) : (
+                labelResults.map((r) => (
+                  <li key={r.slug}>
+                    <a
+                      href={`/recipes/${r.slug}`}
+                      className="block border border-stone-200 dark:border-stone-700 rounded px-4 py-3 text-sm hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+                    >
+                      {r.title}
+                    </a>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Title search */}
       <div>

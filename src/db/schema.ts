@@ -29,6 +29,7 @@ export const recipes = pgTable("recipes", {
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   source: text("source").notNull(),
+  labels: json("labels").$type<string[]>().notNull().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   archivedAt: timestamp("archived_at"),

@@ -17,6 +17,7 @@ In a large pan, heat @olive oil{2%tbsp} over medium heat. Add @garlic{3%cloves},
 Add @canned tomatoes{400%g} and @salt{1%tsp}. Simmer for ~{15%minutes}.
 
 Toss the cooked pasta with the sauce and top with @parmesan cheese{50%g}, grated.`,
+    labels: ["pasta", "italian"],
     createdAt: new Date("2025-01-15"),
     updatedAt: new Date("2025-01-15"),
     archivedAt: null,
@@ -30,6 +31,7 @@ Toss the cooked pasta with the sauce and top with @parmesan cheese{50%g}, grated
 Melt @butter{1%tbsp} in a non-stick pan over low heat. Pour in the eggs and stir gently with a spatula for ~{3%minutes} until just set.
 
 Toast @bread{2%slices} and serve the eggs on top. Garnish with @chives{1%tbsp}, chopped.`,
+    labels: ["breakfast"],
     createdAt: new Date("2025-02-10"),
     updatedAt: new Date("2025-02-10"),
     archivedAt: null,
@@ -43,6 +45,7 @@ Toast @bread{2%slices} and serve the eggs on top. Garnish with @chives{1%tbsp}, 
 Whisk together @olive oil{3%tbsp}, @lemon juice{1%tbsp}, @dijon mustard{1%tsp}, and @honey{1%tsp} to make a vinaigrette.
 
 Toss the greens with the dressing. Top with @cherry tomatoes{100%g}, halved, and @cucumber{1}, sliced.`,
+    labels: ["salad", "vegetarian"],
     createdAt: new Date("2025-03-05"),
     updatedAt: new Date("2025-03-05"),
     archivedAt: null,
@@ -52,39 +55,40 @@ Toss the greens with the dressing. Top with @cherry tomatoes{100%g}, halved, and
 let mockRecipes: Recipe[] = [...seedRecipes];
 let nextId = 4;
 
-function mockGetAllRecipes(): { slug: string; title: string }[] {
+function mockGetAllRecipes(): { slug: string; title: string; labels: string[] }[] {
   return [...mockRecipes]
     .filter((r) => !r.archivedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .map(({ slug, title }) => ({ slug, title }));
+    .map(({ slug, title, labels }) => ({ slug, title, labels }));
 }
 
-function mockGetArchivedRecipes(): { slug: string; title: string }[] {
+function mockGetArchivedRecipes(): { slug: string; title: string; labels: string[] }[] {
   return [...mockRecipes]
     .filter((r) => !!r.archivedAt)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .map(({ slug, title }) => ({ slug, title }));
+    .map(({ slug, title, labels }) => ({ slug, title, labels }));
 }
 
 function mockGetRecipe(slug: string): Recipe | undefined {
   return mockRecipes.find((r) => r.slug === slug);
 }
 
-function mockCreateRecipe(slug: string, title: string, source: string): { slug: string } {
+function mockCreateRecipe(slug: string, title: string, source: string, labels: string[]): { slug: string } {
   if (mockRecipes.some((r) => r.slug === slug)) {
     throw new Error(`A recipe with slug "${slug}" already exists`);
   }
   const now = new Date();
-  const recipe: Recipe = { id: nextId++, slug, title, source, createdAt: now, updatedAt: now, archivedAt: null };
+  const recipe: Recipe = { id: nextId++, slug, title, source, labels, createdAt: now, updatedAt: now, archivedAt: null };
   mockRecipes.push(recipe);
   return { slug: recipe.slug };
 }
 
-function mockUpdateRecipe(slug: string, title: string, source: string): void {
+function mockUpdateRecipe(slug: string, title: string, source: string, labels: string[]): void {
   const recipe = mockRecipes.find((r) => r.slug === slug);
   if (recipe) {
     recipe.title = title;
     recipe.source = source;
+    recipe.labels = labels;
     recipe.updatedAt = new Date();
   }
 }
@@ -105,23 +109,23 @@ function mockIsSlugAvailable(slug: string): boolean {
 
 // --- Real DB implementation ---
 
-async function dbGetAllRecipes(): Promise<{ slug: string; title: string }[]> {
+async function dbGetAllRecipes(): Promise<{ slug: string; title: string; labels: string[] }[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { desc, isNull } = await import("drizzle-orm");
   return db
-    .select({ slug: recipes.slug, title: recipes.title })
+    .select({ slug: recipes.slug, title: recipes.title, labels: recipes.labels })
     .from(recipes)
     .where(isNull(recipes.archivedAt))
     .orderBy(desc(recipes.createdAt));
 }
 
-async function dbGetArchivedRecipes(): Promise<{ slug: string; title: string }[]> {
+async function dbGetArchivedRecipes(): Promise<{ slug: string; title: string; labels: string[] }[]> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { desc, isNotNull } = await import("drizzle-orm");
   return db
-    .select({ slug: recipes.slug, title: recipes.title })
+    .select({ slug: recipes.slug, title: recipes.title, labels: recipes.labels })
     .from(recipes)
     .where(isNotNull(recipes.archivedAt))
     .orderBy(desc(recipes.createdAt));
@@ -135,23 +139,23 @@ async function dbGetRecipe(slug: string): Promise<Recipe | undefined> {
   return recipe;
 }
 
-async function dbCreateRecipe(slug: string, title: string, source: string): Promise<{ slug: string }> {
+async function dbCreateRecipe(slug: string, title: string, source: string, labels: string[]): Promise<{ slug: string }> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const [inserted] = await db
     .insert(recipes)
-    .values({ slug, title, source })
+    .values({ slug, title, source, labels })
     .returning({ slug: recipes.slug });
   return inserted;
 }
 
-async function dbUpdateRecipe(slug: string, title: string, source: string): Promise<void> {
+async function dbUpdateRecipe(slug: string, title: string, source: string, labels: string[]): Promise<void> {
   const { db } = await import("@/db");
   const { recipes } = await import("@/db/schema");
   const { eq } = await import("drizzle-orm");
   await db
     .update(recipes)
-    .set({ title, source, updatedAt: new Date() })
+    .set({ title, source, labels, updatedAt: new Date() })
     .where(eq(recipes.slug, slug));
 }
 
@@ -257,12 +261,12 @@ export async function searchRecipesByIngredients(
 
 const useDb = !!process.env.DATABASE_URL;
 
-export async function getAllRecipes(): Promise<{ slug: string; title: string }[]> {
+export async function getAllRecipes(): Promise<{ slug: string; title: string; labels: string[] }[]> {
   if (useDb) return dbGetAllRecipes();
   return mockGetAllRecipes();
 }
 
-export async function getArchivedRecipes(): Promise<{ slug: string; title: string }[]> {
+export async function getArchivedRecipes(): Promise<{ slug: string; title: string; labels: string[] }[]> {
   if (useDb) return dbGetArchivedRecipes();
   return mockGetArchivedRecipes();
 }
@@ -272,14 +276,14 @@ export async function getRecipe(slug: string): Promise<Recipe | undefined> {
   return mockGetRecipe(slug);
 }
 
-export async function createRecipe(slug: string, title: string, source: string): Promise<{ slug: string }> {
-  if (useDb) return dbCreateRecipe(slug, title, source);
-  return mockCreateRecipe(slug, title, source);
+export async function createRecipe(slug: string, title: string, source: string, labels: string[]): Promise<{ slug: string }> {
+  if (useDb) return dbCreateRecipe(slug, title, source, labels);
+  return mockCreateRecipe(slug, title, source, labels);
 }
 
-export async function updateRecipe(slug: string, title: string, source: string): Promise<void> {
-  if (useDb) return dbUpdateRecipe(slug, title, source);
-  return mockUpdateRecipe(slug, title, source);
+export async function updateRecipe(slug: string, title: string, source: string, labels: string[]): Promise<void> {
+  if (useDb) return dbUpdateRecipe(slug, title, source, labels);
+  return mockUpdateRecipe(slug, title, source, labels);
 }
 
 export async function archiveRecipe(slug: string): Promise<void> {
