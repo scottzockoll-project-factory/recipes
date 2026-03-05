@@ -204,12 +204,12 @@ async function dbIsTitleAvailable(title: string): Promise<boolean> {
 
 // --- Search helpers ---
 
-type RecipeWithSource = { slug: string; title: string; source: string };
+type RecipeWithSource = { slug: string; title: string; source: string; labels: string[] };
 
 function mockGetAllRecipesWithSource(): RecipeWithSource[] {
   return mockRecipes
     .filter((r) => !r.archivedAt)
-    .map(({ slug, title, source }) => ({ slug, title, source }));
+    .map(({ slug, title, source, labels }) => ({ slug, title, source, labels }));
 }
 
 async function dbGetAllRecipesWithSource(): Promise<RecipeWithSource[]> {
@@ -217,7 +217,7 @@ async function dbGetAllRecipesWithSource(): Promise<RecipeWithSource[]> {
   const { recipes } = await import("@/db/schema");
   const { isNull } = await import("drizzle-orm");
   return db
-    .select({ slug: recipes.slug, title: recipes.title, source: recipes.source })
+    .select({ slug: recipes.slug, title: recipes.title, source: recipes.source, labels: recipes.labels })
     .from(recipes)
     .where(isNull(recipes.archivedAt));
 }

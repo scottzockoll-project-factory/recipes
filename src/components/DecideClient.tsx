@@ -16,6 +16,7 @@ interface RecipeWithSource {
   slug: string;
   title: string;
   source: string;
+  labels: string[];
 }
 
 interface Recommendation {
@@ -228,6 +229,19 @@ export default function DecideClient({
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [saving, setSaving] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+
+  const allLabels = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of recipes) for (const l of r.labels) set.add(l);
+    return [...set].sort();
+  }, [recipes]);
+
+  function toggleLabel(label: string) {
+    setSelectedLabels((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
+    );
+  }
 
   function addExtra(raw: string) {
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -308,7 +322,19 @@ export default function DecideClient({
     await setDefaultProfileAction(id);
   }
 
-  const matchedRecipes = recommendations.filter((r) => r.matchedIngredients.length > 0);
+  const labelFilteredRecipes = useMemo(() => {
+    if (selectedLabels.length === 0) return recipes;
+    return recipes.filter((r) => selectedLabels.every((l) => r.labels.includes(l)));
+  }, [recipes, selectedLabels]);
+
+  const labelFilteredSlugs = useMemo(
+    () => new Set(labelFilteredRecipes.map((r) => r.slug)),
+    [labelFilteredRecipes],
+  );
+
+  const matchedRecipes = recommendations.filter(
+    (r) => r.matchedIngredients.length > 0 && labelFilteredSlugs.has(r.slug),
+  );
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
@@ -469,6 +495,32 @@ export default function DecideClient({
           </div>
         )}
       </div>
+
+      {/* Label filters */}
+      {allLabels.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Filter by label</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {allLabels.map((label) => {
+              const active = selectedLabels.includes(label);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => toggleLabel(label)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    active
+                      ? "bg-amber-500 border-amber-500 text-white"
+                      : "bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:border-amber-400 dark:hover:border-amber-500"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Results */}
       <div className="space-y-3">
