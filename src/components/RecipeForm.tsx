@@ -10,12 +10,14 @@ export default function RecipeForm({
   knownIngredients = [],
   knownCookware = [],
   knownLabels = [],
+  error,
 }: {
   action: (formData: FormData) => void;
   defaultValues?: { slug?: string; title: string; source: string; labels?: string[] };
   knownIngredients?: string[];
   knownCookware?: string[];
   knownLabels?: string[];
+  error?: string;
 }) {
   const isEdit = !!defaultValues?.slug;
   const [labels, setLabels] = useState<string[]>(defaultValues?.labels ?? []);
@@ -186,6 +188,11 @@ export default function RecipeForm({
           knownCookware={knownCookware}
         />
       </div>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-3 py-2">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         className="bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 px-4 py-2 rounded hover:bg-stone-700 dark:hover:bg-stone-300"

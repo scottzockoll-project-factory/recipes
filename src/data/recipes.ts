@@ -187,6 +187,21 @@ async function dbIsSlugAvailable(slug: string): Promise<boolean> {
   return !existing;
 }
 
+function mockIsTitleAvailable(title: string): boolean {
+  return !mockRecipes.some((r) => r.title.toLowerCase() === title.toLowerCase());
+}
+
+async function dbIsTitleAvailable(title: string): Promise<boolean> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const { sql } = await import("drizzle-orm");
+  const [existing] = await db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(sql`lower(${recipes.title}) = lower(${title})`);
+  return !existing;
+}
+
 // --- Search helpers ---
 
 type RecipeWithSource = { slug: string; title: string; source: string };
@@ -328,6 +343,11 @@ export async function getAllKnownNames(): Promise<{
 export async function isSlugAvailable(slug: string): Promise<boolean> {
   if (useDb) return dbIsSlugAvailable(slug);
   return mockIsSlugAvailable(slug);
+}
+
+export async function isTitleAvailable(title: string): Promise<boolean> {
+  if (useDb) return dbIsTitleAvailable(title);
+  return mockIsTitleAvailable(title);
 }
 
 function mockGetAllKnownLabels(): string[] {
