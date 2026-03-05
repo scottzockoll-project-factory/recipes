@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import CooklangEditor from "@/components/CooklangEditor";
 
@@ -9,18 +9,36 @@ export default function RecipeForm({
   defaultValues,
   knownIngredients = [],
   knownCookware = [],
+  knownLabels = [],
 }: {
   action: (formData: FormData) => void;
   defaultValues?: { slug?: string; title: string; source: string; labels?: string[] };
   knownIngredients?: string[];
   knownCookware?: string[];
+  knownLabels?: string[];
 }) {
   const isEdit = !!defaultValues?.slug;
   const [labels, setLabels] = useState<string[]>(defaultValues?.labels ?? []);
   const [labelInput, setLabelInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggIndex, setActiveSuggIndex] = useState(-1);
+
+  const suggestions = knownLabels.filter(
+    (l) =>
+      labelInput.trim() &&
+      l.toLowerCase().includes(labelInput.trim().toLowerCase()) &&
+      !labels.includes(l),
+  );
+
+  useEffect(() => {
+    setActiveSuggIndex(-1);
+  }, [suggestions.length]);
 
   function addLabel(raw: string) {
-    const parts = raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
     setLabels((prev) => {
       const set = new Set(prev);
       return [...prev, ...parts.filter((p) => !set.has(p))];
@@ -66,23 +84,67 @@ export default function RecipeForm({
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Labels</label>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            value={labelInput}
-            onChange={(e) => setLabelInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === ",") {
-                e.preventDefault();
-                if (labelInput.trim()) addLabel(labelInput);
-              }
-            }}
-            placeholder="Add a label, press Enter"
-            className="flex-1 border border-stone-300 dark:border-stone-600 rounded px-3 py-2 bg-white dark:bg-stone-800 text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
-          />
+        <div className="relative flex gap-2 mb-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={labelInput}
+              onChange={(e) => {
+                setLabelInput(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggIndex((i) => Math.min(i + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggIndex((i) => Math.max(i - 1, -1));
+                } else if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  if (activeSuggIndex >= 0 && suggestions[activeSuggIndex]) {
+                    addLabel(suggestions[activeSuggIndex]);
+                  } else if (labelInput.trim()) {
+                    addLabel(labelInput);
+                  }
+                  setShowSuggestions(false);
+                } else if (e.key === "Escape") {
+                  setShowSuggestions(false);
+                  setActiveSuggIndex(-1);
+                }
+              }}
+              placeholder="Add a label, press Enter"
+              className="w-full border border-stone-300 dark:border-stone-600 rounded px-3 py-2 bg-white dark:bg-stone-800 text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="absolute z-10 left-0 right-0 top-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-600 rounded shadow-md text-sm max-h-40 overflow-y-auto">
+                {suggestions.map((s, i) => (
+                  <li
+                    key={s}
+                    onMouseDown={() => {
+                      addLabel(s);
+                      setShowSuggestions(false);
+                    }}
+                    className={`px-3 py-1.5 cursor-pointer ${
+                      i === activeSuggIndex
+                        ? "bg-stone-100 dark:bg-stone-700"
+                        : "hover:bg-stone-50 dark:hover:bg-stone-700"
+                    }`}
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => { if (labelInput.trim()) addLabel(labelInput); }}
+            onClick={() => {
+              if (labelInput.trim()) addLabel(labelInput);
+              setShowSuggestions(false);
+            }}
             className="px-3 py-2 rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 text-sm transition-colors"
           >
             Add

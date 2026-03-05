@@ -330,6 +330,30 @@ export async function isSlugAvailable(slug: string): Promise<boolean> {
   return mockIsSlugAvailable(slug);
 }
 
+function mockGetAllKnownLabels(): string[] {
+  const set = new Set<string>();
+  for (const r of mockRecipes) {
+    for (const l of r.labels) set.add(l);
+  }
+  return [...set].sort();
+}
+
+async function dbGetAllKnownLabels(): Promise<string[]> {
+  const { db } = await import("@/db");
+  const { recipes } = await import("@/db/schema");
+  const rows = await db.select({ labels: recipes.labels }).from(recipes);
+  const set = new Set<string>();
+  for (const r of rows) {
+    for (const l of r.labels) set.add(l);
+  }
+  return [...set].sort();
+}
+
+export async function getAllKnownLabels(): Promise<string[]> {
+  if (useDb) return dbGetAllKnownLabels();
+  return mockGetAllKnownLabels();
+}
+
 export async function getAllRecipesWithSource(): Promise<RecipeWithSource[]> {
   if (useDb) return dbGetAllRecipesWithSource();
   return mockGetAllRecipesWithSource();

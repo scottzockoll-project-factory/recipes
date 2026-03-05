@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
-import { createRecipe, isSlugAvailable, getAllKnownNames } from "@/data/recipes";
+import { createRecipe, isSlugAvailable, getAllKnownNames, getAllKnownLabels } from "@/data/recipes";
 import RecipeForm from "@/components/RecipeForm";
 
 export default async function NewRecipePage() {
-  const { ingredients, cookware } = await getAllKnownNames();
+  const [{ ingredients, cookware }, knownLabels] = await Promise.all([
+    getAllKnownNames(),
+    getAllKnownLabels(),
+  ]);
 
   async function handleCreate(formData: FormData) {
     "use server";
@@ -32,6 +35,7 @@ export default async function NewRecipePage() {
         action={handleCreate}
         knownIngredients={ingredients}
         knownCookware={cookware}
+        knownLabels={knownLabels}
       />
     </div>
   );
