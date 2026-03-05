@@ -236,7 +236,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             value={ingredientInput}
             onChange={(e) => setIngredientInput(e.target.value)}
             onKeyDown={ingredientNav.handleKeyDown}
-            placeholder='tomato garlic "olive oil" label:italian'
+            placeholder='tomato garlic "olive oil" label:banchan'
             className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
           <kbd className="hidden sm:inline-flex shrink-0 w-8 justify-center items-center text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
