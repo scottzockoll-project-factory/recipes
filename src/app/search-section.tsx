@@ -16,13 +16,24 @@ interface ResultItem {
   href: string;
 }
 
+function parseLabelTokens(input: string): { labelFilters: string[]; remainder: string } {
+  const labelFilters: string[] = [];
+  const remainder = input
+    .replace(/\blabel:(\S+)/gi, (_, l) => {
+      labelFilters.push(l.toLowerCase());
+      return " ";
+    })
+    .replace(/\s+/g, " ")
+    .trim();
+  return { labelFilters, remainder };
+}
+
 function useArrowNav(items: ResultItem[]) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const router = useRouter();
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
-  // Reset to first item when results change
   const itemSlugs = items.map((i) => i.slug).join(",");
   useEffect(() => {
     setActiveIndex(items.length > 0 ? 0 : -1);
@@ -33,7 +44,6 @@ function useArrowNav(items: ResultItem[]) {
     (e: React.KeyboardEvent) => {
       const current = itemsRef.current;
       if (current.length === 0) return;
-
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex((i) => (i < current.length - 1 ? i + 1 : 0));
@@ -61,27 +71,41 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
   const [ingredientInput, setIngredientInput] = useState("");
   const [ingredientResults, setIngredientResults] = useState<IngredientSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
-
-  const allLabels = [...new Set(recipes.flatMap((r) => r.labels))].sort();
 
   const titleRef = useRef<HTMLInputElement>(null);
   const ingredientRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const ingredients = parseIngredients(ingredientInput);
+  const { labelFilters, remainder } = parseLabelTokens(ingredientInput);
+  const ingredients = parseIngredients(remainder);
 
-  // Label filter (client-side)
-  const labelResults = selectedLabel
-    ? recipes.filter((r) => r.labels.includes(selectedLabel))
-    : [];
+  // Build a set of slugs that match all label filters (for intersection)
+  const labelSlugSet =
+    labelFilters.length > 0
+      ? new Set(
+          recipes
+            .filter((r) => labelFilters.every((l) => r.labels.includes(l)))
+            .map((r) => r.slug),
+        )
+      : null;
 
-  // Title search (client-side filter)
+  // Title search (client-side)
   const titleResults = titleQuery.trim()
     ? recipes.filter((r) =>
         r.title.toLowerCase().includes(titleQuery.trim().toLowerCase()),
       )
     : [];
+
+  // Ingredient results filtered by labels
+  const filteredIngredientResults = labelSlugSet
+    ? ingredientResults.filter((r) => labelSlugSet.has(r.slug))
+    : ingredientResults;
+
+  // Label-only results (no ingredient tokens)
+  const labelOnlyResults =
+    labelFilters.length > 0 && ingredients.length === 0
+      ? recipes.filter((r) => labelFilters.every((l) => r.labels.includes(l)))
+      : [];
 
   const titleItems: ResultItem[] = titleResults.map((r) => ({
     slug: r.slug,
@@ -89,14 +113,22 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
     href: `/recipes/${r.slug}`,
   }));
 
-  const ingredientItems: ResultItem[] = ingredientResults.map((r) => ({
+  const ingredientItems: ResultItem[] = filteredIngredientResults.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    href: `/recipes/${r.slug}`,
+  }));
+
+  const labelOnlyItems: ResultItem[] = labelOnlyResults.map((r) => ({
     slug: r.slug,
     title: r.title,
     href: `/recipes/${r.slug}`,
   }));
 
   const titleNav = useArrowNav(titleItems);
-  const ingredientNav = useArrowNav(ingredientItems);
+  const ingredientNav = useArrowNav(
+    ingredients.length > 0 ? ingredientItems : labelOnlyItems,
+  );
 
   // Ingredient search (debounced server action)
   const doIngredientSearch = useCallback(async (ings: string[]) => {
@@ -119,14 +151,13 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ingredientInput, doIngredientSearch]);
+  }, [remainder, doIngredientSearch]);
 
   // Global keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const active = document.activeElement?.tagName;
       const inInput = active === "INPUT" || active === "TEXTAREA";
-
       if (e.key === "/" && !inInput) {
         e.preventDefault();
         ingredientRef.current?.focus();
@@ -144,57 +175,16 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Autofocus title search on mount
   useEffect(() => {
     titleRef.current?.focus();
   }, []);
 
-  const showLabelResults = selectedLabel !== null;
   const showTitleResults = titleQuery.trim().length > 0;
-  const showIngredientResults = ingredients.length > 0;
+  const showIngredientResults = ingredientInput.trim().length > 0;
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Search</h2>
-
-      {/* Label filter */}
-      {allLabels.length > 0 && (
-        <div>
-          <div className="flex flex-wrap gap-1.5">
-            {allLabels.map((label) => (
-              <button
-                key={label}
-                onClick={() => setSelectedLabel(selectedLabel === label ? null : label)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  selectedLabel === label
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700"
-                    : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-600 hover:border-amber-400 dark:hover:border-amber-600"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {showLabelResults && (
-            <ul className="mt-2 space-y-1">
-              {labelResults.length === 0 ? (
-                <p className="text-sm text-stone-500 dark:text-stone-400">No recipes with that label.</p>
-              ) : (
-                labelResults.map((r) => (
-                  <li key={r.slug}>
-                    <a
-                      href={`/recipes/${r.slug}`}
-                      className="block border border-stone-200 dark:border-stone-700 rounded px-4 py-3 text-sm hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
-                    >
-                      {r.title}
-                    </a>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
-      )}
 
       {/* Title search */}
       <div>
@@ -237,7 +227,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
         )}
       </div>
 
-      {/* Ingredient search */}
+      {/* Ingredient + label search */}
       <div>
         <div className="flex items-center gap-3">
           <input
@@ -246,7 +236,7 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
             value={ingredientInput}
             onChange={(e) => setIngredientInput(e.target.value)}
             onKeyDown={ingredientNav.handleKeyDown}
-            placeholder='Search by ingredients, e.g. tomato garlic "olive oil"'
+            placeholder='tomato garlic "olive oil" label:italian'
             className="w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-500"
           />
           <kbd className="hidden sm:inline-flex shrink-0 w-8 justify-center items-center text-xs text-stone-400 border border-stone-300 dark:border-stone-600 rounded px-1.5 py-0.5 font-mono">
@@ -254,59 +244,77 @@ export default function SearchSection({ recipes }: SearchSectionProps) {
           </kbd>
         </div>
 
-        {ingredients.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {ingredients.map((ing, i) => (
-              <span
-                key={`${ing}-${i}`}
-                className="bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 text-xs rounded-full px-2.5 py-1"
-              >
-                {ing}
-              </span>
-            ))}
-          </div>
-        )}
-
         {searching && (
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-2">Searching...</p>
         )}
 
         {showIngredientResults && !searching && (
           <div className="mt-2">
-            {ingredientResults.length === 0 ? (
-              <p className="text-sm text-stone-500 dark:text-stone-400">No recipes match those ingredients.</p>
-            ) : (
-              <ul className="space-y-2">
-                {ingredientResults.map((recipe, i) => (
-                  <li key={recipe.slug}>
-                    <a
-                      href={`/recipes/${recipe.slug}`}
-                      className={`block border border-stone-200 dark:border-stone-700 rounded-lg p-4 transition-colors ${
-                        i === ingredientNav.activeIndex
-                          ? "bg-stone-200 dark:bg-stone-700"
-                          : "hover:bg-stone-100 dark:hover:bg-stone-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm">{recipe.title}</span>
-                        <span className="text-xs text-stone-500 dark:text-stone-400">
-                          {recipe.matchedIngredients.length}/{recipe.totalIngredients} ingredients
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {recipe.matchedIngredients.map((ing) => (
-                          <span
-                            key={ing}
-                            className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-xs rounded-full px-2 py-0.5"
-                          >
-                            {ing}
-                          </span>
-                        ))}
-                      </div>
-                    </a>
-                  </li>
-                ))}
-              </ul>
+            {/* Label-only results */}
+            {ingredients.length === 0 && (
+              <>
+                {labelOnlyResults.length === 0 ? (
+                  <p className="text-sm text-stone-500 dark:text-stone-400">No recipes match those labels.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {labelOnlyResults.map((r, i) => (
+                      <li key={r.slug}>
+                        <a
+                          href={`/recipes/${r.slug}`}
+                          className={`block border border-stone-200 dark:border-stone-700 rounded px-4 py-3 text-sm transition-colors ${
+                            i === ingredientNav.activeIndex
+                              ? "bg-stone-200 dark:bg-stone-700"
+                              : "hover:bg-stone-100 dark:hover:bg-stone-700"
+                          }`}
+                        >
+                          {r.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+
+            {/* Ingredient (+ optional label) results */}
+            {ingredients.length > 0 && (
+              <>
+                {filteredIngredientResults.length === 0 ? (
+                  <p className="text-sm text-stone-500 dark:text-stone-400">No recipes match.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {filteredIngredientResults.map((recipe, i) => (
+                      <li key={recipe.slug}>
+                        <a
+                          href={`/recipes/${recipe.slug}`}
+                          className={`block border border-stone-200 dark:border-stone-700 rounded-lg p-4 transition-colors ${
+                            i === ingredientNav.activeIndex
+                              ? "bg-stone-200 dark:bg-stone-700"
+                              : "hover:bg-stone-100 dark:hover:bg-stone-700"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-sm">{recipe.title}</span>
+                            <span className="text-xs text-stone-500 dark:text-stone-400">
+                              {recipe.matchedIngredients.length}/{recipe.totalIngredients} ingredients
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {recipe.matchedIngredients.map((ing) => (
+                              <span
+                                key={ing}
+                                className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-xs rounded-full px-2 py-0.5"
+                              >
+                                {ing}
+                              </span>
+                            ))}
+                          </div>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </div>
         )}
