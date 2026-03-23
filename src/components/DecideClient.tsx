@@ -541,10 +541,7 @@ export default function DecideClient({
           )}
         </div>
         {matchedRecipes.map((rec) => {
-          const ratio =
-            rec.totalIngredients > 0
-              ? Math.round((rec.matchedIngredients.length / rec.totalIngredients) * 100)
-              : 0;
+          const needed = rec.totalIngredients - rec.matchedIngredients.length;
           const timeStr = formatCookingTime(rec.cookingTimeSeconds);
           return (
             <a
@@ -561,7 +558,7 @@ export default function DecideClient({
                     </span>
                   )}
                   <span className="text-xs text-stone-500 dark:text-stone-400">
-                    {rec.matchedIngredients.length}/{rec.totalIngredients} ({ratio}%)
+                    {needed === 0 ? "Ready to cook!" : `Need ${needed} more`}
                   </span>
                 </div>
               </div>
