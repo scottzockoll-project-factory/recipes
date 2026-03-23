@@ -101,9 +101,9 @@ function computeRecommendations(
   }
 
   results.sort((a, b) => {
-    const ratioA = a.totalIngredients > 0 ? a.matchedIngredients.length / a.totalIngredients : 0;
-    const ratioB = b.totalIngredients > 0 ? b.matchedIngredients.length / b.totalIngredients : 0;
-    return ratioB - ratioA;
+    const neededA = a.totalIngredients - a.matchedIngredients.length;
+    const neededB = b.totalIngredients - b.matchedIngredients.length;
+    return neededA - neededB;
   });
 
   return results;
@@ -284,9 +284,9 @@ export default function DecideClient({
     const recs = computeRecommendations(recipes, allIngredients);
     if (shuffleSeed === 0) return recs;
     return [...recs].sort((a, b) => {
-      const ratioA = a.totalIngredients > 0 ? a.matchedIngredients.length / a.totalIngredients : 0;
-      const ratioB = b.totalIngredients > 0 ? b.matchedIngredients.length / b.totalIngredients : 0;
-      return (ratioB - ratioA) || seededHash(a.slug, shuffleSeed) - seededHash(b.slug, shuffleSeed);
+      const neededA = a.totalIngredients - a.matchedIngredients.length;
+      const neededB = b.totalIngredients - b.matchedIngredients.length;
+      return (neededA - neededB) || seededHash(a.slug, shuffleSeed) - seededHash(b.slug, shuffleSeed);
     });
   }, [recipes, allIngredients, shuffleSeed]);
 
