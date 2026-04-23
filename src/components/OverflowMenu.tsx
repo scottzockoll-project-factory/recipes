@@ -40,6 +40,12 @@ export default function OverflowMenu() {
           >
             What to Make?
           </a>
+          <a
+            href="/prep"
+            className="block px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-md"
+          >
+            Meal Prep
+          </a>
         </div>
       )}
     </div>
