@@ -5,7 +5,7 @@ import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
 import type { Timer } from "@cooklang/cooklang-ts/dist/cooklang";
 import { Pencil, Shuffle, Star, Trash2, X } from "lucide-react";
 import type { Profile } from "@/data/profiles";
-import { getIngredientHint } from "@/lib/ingredient-hints";
+import { IngredientHint } from "@/lib/ingredient-hints";
 import {
   createProfileAction,
   updateProfileAction,
@@ -572,7 +572,7 @@ export default function DecideClient({
                       key={ing}
                       className="text-xs px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                     >
-                      {ing}{getIngredientHint(ing) ? ` (${getIngredientHint(ing)})` : ""}
+                      {ing}<IngredientHint name={ing} />
                     </span>
                   ))}
                   {rec.missingIngredients.map((ing) => (
@@ -580,7 +580,7 @@ export default function DecideClient({
                       key={ing}
                       className="text-xs px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500"
                     >
-                      {ing}{getIngredientHint(ing) ? ` (${getIngredientHint(ing)})` : ""}
+                      {ing}<IngredientHint name={ing} />
                     </span>
                   ))}
                 </div>

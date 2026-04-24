@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Recipe } from "@cooklang/cooklang-ts";
 import type { Ingredient, Timer } from "@cooklang/cooklang-ts/dist/cooklang";
 import { Check, Eye, EyeOff, Timer as TimerIcon, X } from "lucide-react";
-import { getIngredientHint } from "@/lib/ingredient-hints";
+import { IngredientHint } from "@/lib/ingredient-hints";
 
 interface ActiveTimer {
   id: string;
@@ -260,11 +260,7 @@ export default function RecipeView({ source }: { source: string }) {
                       }
                     >
                       {ingredientLabel(ing)}
-                      {getIngredientHint(ing.name) && (
-                        <span className="ml-1 text-xs text-stone-400 dark:text-stone-500">
-                          ({getIngredientHint(ing.name)})
-                        </span>
-                      )}
+                      <IngredientHint name={ing.name} />
                     </span>
                   </label>
                 </li>
@@ -327,11 +323,7 @@ export default function RecipeView({ source }: { source: string }) {
                                 }`}
                               >
                                 {showUnits ? ingredientLabel(token) : token.name}
-                                {getIngredientHint(token.name) && (
-                                  <span className="text-xs font-normal text-stone-400 dark:text-stone-500">
-                                    {" "}({getIngredientHint(token.name)})
-                                  </span>
-                                )}
+                                <IngredientHint name={token.name} />
                               </span>
                             );
                           case "cookware":

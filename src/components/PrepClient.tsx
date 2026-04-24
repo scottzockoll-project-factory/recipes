@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
 import { Check, X, Save, Trash2 } from "lucide-react";
-import { getIngredientHint } from "@/lib/ingredient-hints";
+import { IngredientHint } from "@/lib/ingredient-hints";
 import {
   createPrepAction,
   updatePrepAction,
@@ -400,11 +400,7 @@ export default function PrepClient({
                         </span>
                       ))}
                       <span>{item.name}</span>
-                      {getIngredientHint(item.name) && (
-                        <span className="ml-1 text-xs text-stone-400 dark:text-stone-500">
-                          ({getIngredientHint(item.name)})
-                        </span>
-                      )}
+                      <IngredientHint name={item.name} />
                     </div>
                     <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
                       {[...new Set(item.entries.flatMap((e) => e.recipes))].join(", ")}
