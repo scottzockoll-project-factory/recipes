@@ -76,7 +76,7 @@ function formatQuantity(n: number): string {
     [0.25, "¼"], [0.333, "⅓"], [0.5, "½"], [0.667, "⅔"], [0.75, "¾"],
   ];
   for (const [val, sym] of fractions) {
-    if (Math.abs(frac - val) < 0.01) {
+    if (Math.abs(frac - val) < 0.02) {
       return whole > 0 ? `${whole} ${sym}` : sym;
     }
   }
