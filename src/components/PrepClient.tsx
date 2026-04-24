@@ -2,7 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
-import { Check, X } from "lucide-react";
+import { Check, X, Save, Trash2 } from "lucide-react";
+import { getIngredientHint } from "@/lib/ingredient-hints";
+import {
+  createPrepAction,
+  updatePrepAction,
+  deletePrepAction,
+} from "@/app/prep/actions";
 
 interface RecipeWithSource {
   slug: string;
@@ -106,10 +112,29 @@ function aggregateIngredients(ingredients: ParsedIngredient[]): AggregatedIngred
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export default function PrepClient({ recipes }: { recipes: RecipeWithSource[] }) {
+interface MealPrep {
+  id: number;
+  name: string;
+  recipeSlugs: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export default function PrepClient({
+  recipes,
+  initialPreps,
+}: {
+  recipes: RecipeWithSource[];
+  initialPreps: MealPrep[];
+}) {
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const [preps, setPreps] = useState<MealPrep[]>(initialPreps);
+  const [saveName, setSaveName] = useState("");
+  const [showSave, setShowSave] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadedPrepId, setLoadedPrepId] = useState<number | null>(null);
 
   const sortedRecipes = useMemo(
     () => [...recipes].sort((a, b) => a.title.localeCompare(b.title)),
@@ -157,6 +182,43 @@ export default function PrepClient({ recipes }: { recipes: RecipeWithSource[] })
       else next.add(key);
       return next;
     });
+  }
+
+  async function handleSave() {
+    const name = saveName.trim();
+    if (!name || selectedSlugs.size === 0) return;
+    setSaving(true);
+    try {
+      const slugs = [...selectedSlugs];
+      if (loadedPrepId) {
+        await updatePrepAction(loadedPrepId, name, slugs);
+        setPreps((prev) =>
+          prev.map((p) =>
+            p.id === loadedPrepId ? { ...p, name, recipeSlugs: slugs, updatedAt: new Date() } : p,
+          ),
+        );
+      } else {
+        const prep = await createPrepAction(name, slugs);
+        setPreps((prev) => [prep, ...prev]);
+        setLoadedPrepId(prep.id);
+      }
+      setShowSave(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleLoad(prep: MealPrep) {
+    setSelectedSlugs(new Set(prep.recipeSlugs));
+    setCheckedItems(new Set());
+    setLoadedPrepId(prep.id);
+    setSaveName(prep.name);
+  }
+
+  async function handleDelete(id: number) {
+    setPreps((prev) => prev.filter((p) => p.id !== id));
+    if (loadedPrepId === id) setLoadedPrepId(null);
+    await deletePrepAction(id);
   }
 
   const selectedCount = selectedSlugs.size;
@@ -217,15 +279,89 @@ export default function PrepClient({ recipes }: { recipes: RecipeWithSource[] })
         )}
       </div>
 
-      {/* Shopping list */}
+      {/* Saved preps */}
+      {preps.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Saved Preps</h2>
+          <div className="border border-stone-200 dark:border-stone-700 rounded-lg divide-y divide-stone-200 dark:divide-stone-700">
+            {preps.map((prep) => {
+              const isLoaded = loadedPrepId === prep.id;
+              return (
+                <div
+                  key={prep.id}
+                  className={`flex items-center justify-between px-3 py-2 ${
+                    isLoaded ? "bg-amber-50 dark:bg-amber-900/20" : ""
+                  }`}
+                >
+                  <button
+                    onClick={() => handleLoad(prep)}
+                    className="flex-1 text-left text-sm min-w-0"
+                  >
+                    <span className={`font-medium ${isLoaded ? "text-amber-700 dark:text-amber-400" : ""}`}>
+                      {prep.name}
+                    </span>
+                    <span className="ml-2 text-xs text-stone-400 dark:text-stone-500">
+                      {prep.recipeSlugs.length} recipe{prep.recipeSlugs.length !== 1 ? "s" : ""}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(prep.id)}
+                    className="text-stone-400 dark:text-stone-500 hover:text-red-500 transition-colors shrink-0 p-1"
+                    aria-label={`Delete ${prep.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Save / Shopping list */}
       {selectedCount > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Shopping List</h2>
-            <span className="text-sm text-stone-500 dark:text-stone-400">
-              {aggregated.length} ingredient{aggregated.length !== 1 ? "s" : ""}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-stone-500 dark:text-stone-400">
+                {aggregated.length} ingredient{aggregated.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={() => { setShowSave((v) => !v); if (!saveName) setSaveName(""); }}
+                className="inline-flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+              >
+                <Save size={13} />
+                {loadedPrepId ? "Update" : "Save"}
+              </button>
+            </div>
           </div>
+          {showSave && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                placeholder="Prep name…"
+                className="flex-1 text-sm px-2.5 py-1.5 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                autoFocus
+              />
+              <button
+                onClick={handleSave}
+                disabled={saving || !saveName.trim()}
+                className="text-sm px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white transition-colors"
+              >
+                {saving ? "Saving…" : loadedPrepId ? "Update" : "Save"}
+              </button>
+              <button
+                onClick={() => setShowSave(false)}
+                className="text-sm px-2 py-1.5 rounded bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <div className="border border-stone-200 dark:border-stone-700 rounded-lg divide-y divide-stone-100 dark:divide-stone-800">
             {aggregated.map((item) => {
               const key = item.name.toLowerCase();
@@ -264,6 +400,11 @@ export default function PrepClient({ recipes }: { recipes: RecipeWithSource[] })
                         </span>
                       ))}
                       <span>{item.name}</span>
+                      {getIngredientHint(item.name) && (
+                        <span className="ml-1 text-xs text-stone-400 dark:text-stone-500">
+                          ({getIngredientHint(item.name)})
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
                       {[...new Set(item.entries.flatMap((e) => e.recipes))].join(", ")}

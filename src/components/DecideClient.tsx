@@ -5,6 +5,7 @@ import { Recipe as CooklangRecipe } from "@cooklang/cooklang-ts";
 import type { Timer } from "@cooklang/cooklang-ts/dist/cooklang";
 import { Pencil, Shuffle, Star, Trash2, X } from "lucide-react";
 import type { Profile } from "@/data/profiles";
+import { getIngredientHint } from "@/lib/ingredient-hints";
 import {
   createProfileAction,
   updateProfileAction,
@@ -67,7 +68,9 @@ function computeRecommendations(
 
   for (const recipe of recipes) {
     const parsed = new CooklangRecipe(recipe.source);
-    const recipeIngredients = parsed.ingredients.map((ing) => ing.name.toLowerCase().trim());
+    const recipeIngredients = [
+      ...new Set(parsed.ingredients.map((ing) => ing.name.toLowerCase().trim())),
+    ];
 
     const matched = new Set<string>();
     for (const userIng of normalized) {
@@ -569,7 +572,7 @@ export default function DecideClient({
                       key={ing}
                       className="text-xs px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                     >
-                      {ing}
+                      {ing}{getIngredientHint(ing) ? ` (${getIngredientHint(ing)})` : ""}
                     </span>
                   ))}
                   {rec.missingIngredients.map((ing) => (
@@ -577,7 +580,7 @@ export default function DecideClient({
                       key={ing}
                       className="text-xs px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500"
                     >
-                      {ing}
+                      {ing}{getIngredientHint(ing) ? ` (${getIngredientHint(ing)})` : ""}
                     </span>
                   ))}
                 </div>

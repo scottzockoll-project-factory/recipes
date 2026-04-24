@@ -24,6 +24,14 @@ export const pantryProfiles = pgTable("pantry_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const mealPreps = pgTable("meal_preps", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  recipeSlugs: json("recipe_slugs").$type<string[]>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
